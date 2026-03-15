@@ -1319,6 +1319,13 @@ const P=()=>{try{return JSON.parse(localStorage.getItem('el_p'))||{name:'',schoo
 let profile=P();
 if(!profile.name.trim())S.scr='login';
 const sP=p=>{profile=p;try{localStorage.setItem('el_p',JSON.stringify(p));}catch(e){}};
+
+// ━━ 관리자 시스템 ━━
+const ADMIN_ID='admin';
+const ADMIN_PW='englib2026!';
+function isAdmin(){return!!localStorage.getItem('el_admin');}
+function adminLogin(id,pw){if(id===ADMIN_ID&&pw===ADMIN_PW){localStorage.setItem('el_admin','1');return true;}return false;}
+function adminLogout(){localStorage.removeItem('el_admin');}
 const gH=()=>{try{return JSON.parse(localStorage.getItem('el_h'))||[];}catch(e){return[];}};
 const sH=e=>{const h=gH();h.push(e);if(h.length>20)h.shift();try{localStorage.setItem('el_h',JSON.stringify(h));}catch(e){}};
 
@@ -1625,23 +1632,26 @@ function rHome(){setBottom(null);
     <!-- Test Start -->
     <div class="sec-label">학습하기</div>
     <div class="card" style="padding:0;overflow:hidden">
-      <button onclick="goMode('교과서')" style="width:100%;padding:20px;border:none;background:none;display:flex;align-items:center;gap:16px;cursor:pointer;text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background=''">
+      <button onclick="toast('수능 영어 트레이닝은 준비 중이에요')" style="width:100%;padding:20px;border:none;background:none;display:flex;align-items:center;gap:16px;cursor:pointer;text-align:left;transition:background .15s;opacity:.5" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background=''">
         <div style="width:52px;height:52px;background:var(--blue-l);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">🚀</div>
         <div style="flex:1">
           <div class="t-title">수능 영어 트레이닝</div>
           <div class="t-caption c-sub" style="margin-top:2px">정규 커리큘럼 · 유형별 맞춤 학습</div>
         </div>
-        <span style="color:var(--hint);font-size:18px;font-weight:300">›</span>
+        <span style="font-size:11px;font-weight:600;color:var(--hint);background:var(--g100);padding:4px 10px;border-radius:10px">준비중</span>
       </button>
-      <div style="height:1px;background:var(--divider);margin:0 20px"></div>
+      ${isAdmin()?`<div style="height:1px;background:var(--divider);margin:0 20px"></div>
       <button onclick="goMode('교과서')" style="width:100%;padding:20px;border:none;background:none;display:flex;align-items:center;gap:16px;cursor:pointer;text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background=''">
         <div style="width:52px;height:52px;background:var(--purple-l);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">📚</div>
         <div style="flex:1">
-          <div class="t-title">교과서 테스트</div>
+          <div class="t-title">정규 커리큘럼 테스트</div>
           <div class="t-caption c-sub" style="margin-top:2px">교과 · 출판사 · 과별 맞춤 시험</div>
         </div>
-        <span style="color:var(--hint);font-size:18px;font-weight:300">›</span>
-      </button>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:10px;font-weight:700;color:var(--red);background:var(--red-l);padding:3px 8px;border-radius:8px">관리자</span>
+          <span style="color:var(--hint);font-size:18px;font-weight:300">›</span>
+        </div>
+      </button>`:''}
     </div>
 
     <!-- 내신핏 전환 배너 -->
@@ -1908,6 +1918,12 @@ function rMy(){setBottom(null);
         <span style="flex:1;font-size:14px;font-weight:600;color:var(--text)">${localStorage.getItem('el_theme')==='dark'?'라이트 모드':'다크 모드'}</span>
         <span style="color:var(--hint);font-size:18px;font-weight:300">›</span>
       </button>
+      <div style="height:1px;background:var(--divider);margin:0 20px"></div>
+      <button onclick="${isAdmin()?'adminLogout();toast(\'관리자 로그아웃\');R()':'openAdminLogin()'}" style="width:100%;padding:16px 20px;border:none;background:none;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background=''">
+        <span style="font-size:18px">${isAdmin()?'🔓':'🔒'}</span>
+        <span style="flex:1;font-size:14px;font-weight:600;color:var(--text)">${isAdmin()?'관리자 로그아웃':'관리자 로그인'}</span>
+        ${isAdmin()?'<span style="font-size:10px;font-weight:700;color:var(--red);background:var(--red-l);padding:3px 8px;border-radius:8px">ON</span>':'<span style="color:var(--hint);font-size:18px;font-weight:300">›</span>'}
+      </button>
     </div>
 
     <div style="text-align:center;padding:24px 20px 12px;font-size:11px;color:var(--hint)">© 영어해방공식 · 온라인 영어학원</div>
@@ -1922,6 +1938,21 @@ function doLogout(){const s=$('ps');if(s)s.remove();sP({name:'',school:'',grade:
 function viewHistory(idx){const h=gH();const r=h[idx];if(!r||!r.det)return;S.res={score:r.score,ok:r.ok,no:r.no,sk:r.sk||0,tP:r.tP||100,eP:r.eP||0,lv:LV(r.score),det:r.det,tM:r.tM||{}};S.tt=r.type||'테스트';S.te=0;S.fromHist=true;S.scr='result';R();}
 function goMode(m){S.mode=m;S.scr='select';S.sel=[];S.acc={};R();}
 function goHome(){if(S.ti)clearInterval(S.ti);Object.assign(S,{scr:'home',mode:null,sel:[],tt:null,qs:[],ans:{},res:null,rv:{}});S._isReview=false;S._isDaily=false;S._challengeScore=null;S._challengeName=null;S.tl=1200;S.dir='back';R();}
+
+// ━━ Admin Login Sheet ━━
+function openAdminLogin(){
+  const d=document.createElement('div');d.className='sheet-overlay';d.id='als';
+  d.innerHTML=`<div class="sheet"><div class="sheet-bar"></div>
+    <div class="t-title" style="margin-bottom:16px">관리자 로그인</div>
+    <input id="adId" class="input" placeholder="아이디" style="margin-bottom:10px">
+    <input id="adPw" class="input" placeholder="비밀번호" type="password" style="margin-bottom:16px">
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="$('als').remove()">취소</button>
+      <button class="btn btn-blue btn-sm" style="flex:1" onclick="if(adminLogin($('adId').value.trim(),$('adPw').value.trim())){$('als').remove();toast('관리자 모드 활성화');R();}else{toast('아이디 또는 비밀번호가 틀려요');}">로그인</button>
+    </div>
+  </div>`;
+  document.body.appendChild(d);
+}
 
 // ━━ D-day Settings Sheet ━━
 function openDdaySheet(){
