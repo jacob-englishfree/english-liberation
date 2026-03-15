@@ -1903,30 +1903,25 @@ function rSurvey(){
         </div>
         <div style="margin-bottom:16px">
           <label style="font-size:13px;font-weight:600;color:var(--sub);display:block;margin-bottom:6px">이름 (성 포함 본명) <span style="color:var(--red)">*</span></label>
-          <input id="svName" class="input" value="${esc(profile.name||'')}" placeholder="예: 유환희">
+          <input id="svName" class="input" value="${esc(sv.name||profile.name||'')}" placeholder="예: 유환희">
         </div>
         <div style="margin-bottom:16px">
           <label style="font-size:13px;font-weight:600;color:var(--sub);display:block;margin-bottom:6px">학교 <span style="color:var(--red)">*</span></label>
-          <input id="svSchool" class="input" value="${esc(profile.school||'')}" placeholder="예: 서울휘문고등학교">
+          <input id="svSchool" class="input" value="${esc(sv.school||profile.school||'')}" placeholder="예: 서울휘문고등학교">
         </div>
         <div style="margin-bottom:20px">
           <label style="font-size:13px;font-weight:600;color:var(--sub);display:block;margin-bottom:6px">학년 <span style="color:var(--red)">*</span></label>
           <select id="svGrade" class="input select">
-            <option value="">학년을 선택해주세요</option>
-            <option value="중2" ${profile.grade==='중2'?'selected':''}>중학교 2학년</option>
-            <option value="중3" ${profile.grade==='중3'?'selected':''}>중학교 3학년</option>
-            <option value="고1" ${profile.grade==='고1'?'selected':''}>고등학교 1학년</option>
-            <option value="고2" ${profile.grade==='고2'?'selected':''}>고등학교 2학년</option>
-            <option value="고3" ${profile.grade==='고3'?'selected':''}>고등학교 3학년</option>
+            ${(()=>{const g=sv.grade||profile.grade||'';return [['','학년을 선택해주세요'],['중2','중학교 2학년'],['중3','중학교 3학년'],['고1','고등학교 1학년'],['고2','고등학교 2학년'],['고3','고등학교 3학년']].map(([v,l])=>'<option value="'+v+'" '+(g===v?'selected':'')+'>'+l+'</option>').join('');})()}
           </select>
         </div>
         <div style="margin-bottom:20px">
           <label style="font-size:13px;font-weight:600;color:var(--sub);display:block;margin-bottom:6px">수강중인 정규커리큘럼 <span style="color:var(--red)">*</span></label>
-          <div class="chips">${curriculums.map(c=>`<button class="chip${sv.curriculum===c?' on':''}" onclick="surveyState.curriculum='${c}';R()">${esc(c)}</button>`).join('')}</div>
+          <div class="chips">${curriculums.map(c=>`<button class="chip${sv.curriculum===c?' on':''}" onclick="saveSurveyInputs();surveyState.curriculum='${c}';R()">${esc(c)}</button>`).join('')}</div>
         </div>
         <div style="margin-bottom:20px">
           <label style="font-size:13px;font-weight:600;color:var(--sub);display:block;margin-bottom:6px">담당 선생님 <span style="color:var(--red)">*</span></label>
-          <div class="chips">${teachers.map(t=>`<button class="chip${sv.teacher===t?' on':''}" onclick="surveyState.teacher='${t}';surveyState.week='';surveyState.day='';R()">${esc(t)}</button>`).join('')}</div>
+          <div class="chips">${teachers.map(t=>`<button class="chip${sv.teacher===t?' on':''}" onclick="saveSurveyInputs();surveyState.teacher='${t}';surveyState.week='';surveyState.day='';R()">${esc(t)}</button>`).join('')}</div>
         </div>
         ${prev?`<div class="card" style="margin:0;background:var(--blue-xl);border:1.5px solid var(--blue);padding:14px 16px">
           <div style="font-size:12px;font-weight:700;color:var(--blue);margin-bottom:6px">이번 주 제출 내역 (${getWeekRange()})</div>
@@ -2032,6 +2027,12 @@ function rSurvey(){
     ${body}
     <div class="bottom-spacer"></div>
   </div>`;
+}
+function saveSurveyInputs(){
+  const n=$('svName'),s=$('svSchool'),g=$('svGrade');
+  if(n)surveyState.name=n.value.trim();
+  if(s)surveyState.school=s.value.trim();
+  if(g)surveyState.grade=g.value;
 }
 function surveyStepNext(){
   const sv=surveyState;
