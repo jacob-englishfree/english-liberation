@@ -1136,6 +1136,7 @@ let MANIFEST = {"교과서":{"영어1":{"비상홍":{lessons:[1,2,3,4],dn:"비�
 
 let S={scr:'home',mode:null,sel:[],qc:20,tt:null,qs:[],ans:{},ci:0,ts:null,te:0,ti:null,tl:1200,tlf:1200,res:null,acc:{},rv:{},dir:'fwd'};
 let surveyState={step:1,curriculum:'',teacher:'',week:'',day:'',name:'',school:'',grade:''};
+let surveyAvail=null; // {unavailable:[], max:9, counts:{월:0,화:0,...}}
 
 // ━━ Dark Mode ━━
 function initTheme(){const t=localStorage.getItem('el_theme')||'light';document.documentElement.setAttribute('data-theme',t);document.querySelector('meta[name="theme-color"]').content=t==='dark'?'#111111':'#FFFFFF';}
@@ -1875,6 +1876,30 @@ function getThisWeekSurvey(){
   const weekEnd=new Date(weekStart);weekEnd.setDate(weekEnd.getDate()+7);
   return h.filter(e=>e.timestamp>=weekStart.getTime()&&e.timestamp<weekEnd.getTime()).pop()||null;
 }
+async function fetchSurveyAvail(teacher){
+  if(!supa)return;
+  const now=new Date();const dow=now.getDay();const monDiff=now.getDate()-dow+(dow===0?1:dow===1?0:8-dow);
+  const nextMon=new Date(now.getFullYear(),now.getMonth(),monDiff);
+  const weekStart=nextMon.toISOString().slice(0,10);
+  surveyAvail={unavailable:[],max:9,counts:{},loading:false};
+  try{
+    const[schedRes,countRes]=await Promise.all([
+      supa.from('teacher_schedule').select('*').eq('teacher',teacher).eq('week_start',weekStart).maybeSingle(),
+      supa.from('zoom_surveys').select('day').eq('teacher',teacher).gte('created_at',nextMon.toISOString())
+    ]);
+    if(schedRes.data){
+      surveyAvail.unavailable=schedRes.data.unavailable_days||[];
+      surveyAvail.max=schedRes.data.max_per_day||9;
+    }
+    const counts={};
+    (countRes.data||[]).forEach(r=>{
+      const m=r.day.match(/^([\uAC00-\uD7AF])/);
+      if(m)counts[m[1]]=(counts[m[1]]||0)+1;
+    });
+    surveyAvail.counts=counts;
+  }catch(e){console.error('fetchSurveyAvail error',e);}
+  R();
+}
 function rSurvey(){
   const sv=surveyState;
   const teacherWeeks={'곽주엽T':8,'양윤성T':14,'양현서T':14,'강제니T':14,'한민준T':14};
@@ -1953,7 +1978,7 @@ function rSurvey(){
         <div style="font-size:12px;color:var(--sub);margin-bottom:6px;line-height:1.6">*당일 응시가능인원은 선착순입니다.<br>*선착순에서 마감되며, 요일선택이 가능하다면 자리가 있는것입니다!</div>
         <div style="font-size:12px;color:var(--red);font-weight:600;margin-bottom:16px">본인이 선택한 시간에 반드시 응시해야합니다. 신중하게 선택해주세요.</div>
         <div>
-          ${days.map(d=>{const dt=new Date(nextMon);dt.setDate(dt.getDate()+dayIdx[d]);const dateStr=(dt.getMonth()+1)+'/'+dt.getDate();const label=`${d} ${dateStr} (저녁10시~12시)`;return`<button class="opt${sv.day===label?' on':''}" onclick="surveyState.day='${label}';R()"><div style="width:22px;height:22px;border-radius:50%;border:2px solid ${sv.day===label?'var(--blue)':'var(--g300)'};display:flex;align-items:center;justify-content:center;flex-shrink:0">${sv.day===label?'<div style="width:12px;height:12px;border-radius:50%;background:var(--blue)"></div>':''}</div><span style="font-size:15px;font-weight:${sv.day===label?'700':'500'}">${label}</span></button>`;}).join('')}
+          ${days.map(d=>{const dt=new Date(nextMon);dt.setDate(dt.getDate()+dayIdx[d]);const dateStr=(dt.getMonth()+1)+'/'+dt.getDate();const label=`${d} ${dateStr} (저녁10시~12시)`;const av=surveyAvail||{unavailable:[],max:9,counts:{}};const isUnavail=av.unavailable.includes(d);const cnt=av.counts[d]||0;const maxD=av.max||9;const isFull=cnt>=maxD;const disabled=isUnavail||isFull;const badge=isUnavail?'<span style="font-size:11px;color:var(--red);font-weight:700;margin-left:auto">테스트 없음</span>':isFull?`<span style="font-size:11px;color:var(--red);font-weight:700;margin-left:auto">마감 (${maxD}/${maxD})</span>`:`<span style="font-size:11px;color:var(--green,#22c55e);font-weight:600;margin-left:auto">${maxD-cnt}/${maxD} 남음</span>`;return`<button class="opt${sv.day===label?' on':''}${disabled?' disabled':''}" ${disabled?'disabled':''}style="${disabled?'opacity:0.45;pointer-events:'+(disabled?'none':'auto')+';':''}" onclick="surveyState.day='${label}';R()"><div style="width:22px;height:22px;border-radius:50%;border:2px solid ${sv.day===label?'var(--blue)':'var(--g300)'};display:flex;align-items:center;justify-content:center;flex-shrink:0">${sv.day===label?'<div style="width:12px;height:12px;border-radius:50%;background:var(--blue)"></div>':''}</div><span style="font-size:15px;font-weight:${sv.day===label?'700':'500'};flex:1">${label}</span>${badge}</button>`;}).join('')}
         </div>
       </div>`;
   } else if(sv.step===4){
@@ -2048,7 +2073,7 @@ function surveyStepNext(){
     sP({name:svN,school:svS,grade:svG});
     sv.step=2;
   }
-  else if(sv.step===2){if(!sv.week){toast('주차를 선택해주세요');return;}sv.step=3;}
+  else if(sv.step===2){if(!sv.week){toast('주차를 선택해주세요');return;}sv.step=3;fetchSurveyAvail(sv.teacher);}
   else if(sv.step===3){
     if(!sv.day){toast('요일을 선택해주세요');return;}
     // Save to localStorage
