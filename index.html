@@ -1322,7 +1322,7 @@ const sP=p=>{profile=p;try{localStorage.setItem('el_p',JSON.stringify(p));}catch
 
 // ━━ 관리자 시스템 ━━
 const ADMIN_ID='admin';
-const ADMIN_PW='englib2026!';
+const ADMIN_PW='1350';
 function isAdmin(){return!!localStorage.getItem('el_admin');}
 function adminLogin(id,pw){if(id===ADMIN_ID&&pw===ADMIN_PW){localStorage.setItem('el_admin','1');return true;}return false;}
 function adminLogout(){localStorage.removeItem('el_admin');}
