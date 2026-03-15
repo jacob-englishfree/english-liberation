@@ -1878,8 +1878,8 @@ function getThisWeekSurvey(){
 }
 async function fetchSurveyAvail(teacher){
   if(!supa)return;
-  const now=new Date();const dow=now.getDay();const monDiff=now.getDate()-dow+(dow===0?1:dow===1?0:8-dow);
-  const nextMon=new Date(now.getFullYear(),now.getMonth(),monDiff);
+  const now=new Date();const dow=now.getDay();const daysUntil=(8-dow)%7||7;
+  const nextMon=new Date(now.getFullYear(),now.getMonth(),now.getDate()+daysUntil);
   const weekStart=nextMon.toISOString().slice(0,10);
   surveyAvail={unavailable:[],max:9,counts:{},loading:false};
   try{
@@ -1970,8 +1970,8 @@ function rSurvey(){
   } else if(sv.step===3){
     const days=teacherDays[sv.teacher]||defaultDays;
     const dayIdx={월:0,화:1,수:2,목:3,금:4};
-    const now=new Date();const dow=now.getDay();const monDiff=now.getDate()-dow+(dow===0?1:dow===1?0:8-dow);
-    const nextMon=new Date(now.getFullYear(),now.getMonth(),monDiff);
+    const now=new Date();const dow=now.getDay();const daysUntilMon=(8-dow)%7||7;
+    const nextMon=new Date(now.getFullYear(),now.getMonth(),now.getDate()+daysUntilMon);
     body=`
       <div style="padding:0 20px;margin-top:8px">
         <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">${esc(sv.teacher)} 테스트 응시가능시간</div>
