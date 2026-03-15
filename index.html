@@ -1878,16 +1878,18 @@ function getThisWeekSurvey(){
 }
 async function fetchSurveyAvail(teacher){
   if(!supa)return;
-  // 이번 주 월요일 기준으로 조회
+  // 월~금: 이번 주 기준, 토~일: 다음 주 기준
   const now=new Date();const dow=now.getDay();
-  const thisMonDiff=now.getDate()-dow+(dow===0?-6:1);
-  const thisMon=new Date(now.getFullYear(),now.getMonth(),thisMonDiff);
-  const thisWeekStart=thisMon.toISOString().slice(0,10);
+  const isWeekend=dow===0||dow===6;
+  const monDiff=isWeekend?(dow===0?1:2):(now.getDate()-dow+1);
+  const targetMon=new Date(now.getFullYear(),now.getMonth(),isWeekend?now.getDate()+(dow===0?1:2):monDiff);
+  targetMon.setHours(0,0,0,0);
+  const thisWeekStart=targetMon.toISOString().slice(0,10);
   surveyAvail={unavailable:[],max:9,counts:{},loading:false};
   try{
     const[schedRes,countRes]=await Promise.all([
       supa.from('teacher_schedule').select('*').eq('teacher',teacher).eq('week_start',thisWeekStart).maybeSingle(),
-      supa.from('zoom_surveys').select('day').eq('teacher',teacher).gte('created_at',thisMon.toISOString())
+      supa.from('zoom_surveys').select('day').eq('teacher',teacher).gte('created_at',targetMon.toISOString())
     ]);
     if(schedRes.data){
       surveyAvail.unavailable=schedRes.data.unavailable_days||[];
@@ -1973,8 +1975,10 @@ function rSurvey(){
     const days=teacherDays[sv.teacher]||defaultDays;
     const dayIdx={월:0,화:1,수:2,목:3,금:4};
     const now=new Date();const dow=now.getDay();
-    const thisMonDiff=now.getDate()-dow+(dow===0?-6:1);
-    const thisMon=new Date(now.getFullYear(),now.getMonth(),thisMonDiff);
+    const isWeekend=dow===0||dow===6;
+    const monDiff=isWeekend?(dow===0?1:2):(now.getDate()-dow+1);
+    const thisMon=new Date(now.getFullYear(),now.getMonth(),isWeekend?now.getDate()+(dow===0?1:2):monDiff);
+    thisMon.setHours(0,0,0,0);
     const todayDate=now.toISOString().slice(0,10);
     body=`
       <div style="padding:0 20px;margin-top:8px">
