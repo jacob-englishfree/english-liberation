@@ -2373,23 +2373,6 @@ function rMy(){setBottom(null);
       </div>`;})()}
     </div>
 
-    <!-- 경고 관리 -->
-    ${(()=>{const w=getWarnings();return `
-    <div class="sec-label">경고 현황</div>
-    <div class="card" style="padding:20px">
-      <div style="display:flex;gap:12px;margin-bottom:16px">
-        <div style="flex:1;text-align:center;padding:14px 0;background:${w.warnings>=2?'var(--yellow-l)':'var(--g50)'};border-radius:var(--r-md)">
-          <div style="font-size:24px;font-weight:800;color:${w.warnings>=2?'var(--yellow)':'var(--text)'}">${w.warnings}</div>
-          <div style="font-size:11px;color:var(--sub);margin-top:2px;font-weight:500">경고</div>
-        </div>
-        <div style="flex:1;text-align:center;padding:14px 0;background:${w.yellows>=1?'var(--red-l)':'var(--g50)'};border-radius:var(--r-md)">
-          <div style="font-size:24px;font-weight:800;color:${w.yellows>=1?'var(--red)':'var(--text)'}">${w.yellows}</div>
-          <div style="font-size:11px;color:var(--sub);margin-top:2px;font-weight:500">옐로카드</div>
-        </div>
-      </div>
-      <div style="font-size:11px;color:var(--sub);line-height:1.6">경고 2회 = 옐로카드 · 옐로카드 2회 = 레드카드(수강정지)<br>경고는 2주간 유효</div>
-    </div>`;})()}
-
     <!-- Settings List -->
     <div class="sec-label">설정</div>
     <div class="card" style="padding:0;overflow:hidden">
