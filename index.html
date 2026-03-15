@@ -1949,13 +1949,16 @@ function rSurvey(){
       </div>`;
   } else if(sv.step===3){
     const days=teacherDays[sv.teacher]||defaultDays;
+    const dayIdx={월:0,화:1,수:2,목:3,금:4};
+    const now=new Date();const dow=now.getDay();const monDiff=now.getDate()-dow+(dow===0?1:dow===1?0:8-dow);
+    const nextMon=new Date(now.getFullYear(),now.getMonth(),monDiff);
     body=`
       <div style="padding:0 20px;margin-top:8px">
         <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">${esc(sv.teacher)} 테스트 응시가능시간</div>
         <div style="font-size:12px;color:var(--sub);margin-bottom:6px;line-height:1.6">*당일 응시가능인원은 선착순입니다.<br>*선착순에서 마감되며, 요일선택이 가능하다면 자리가 있는것입니다!</div>
         <div style="font-size:12px;color:var(--red);font-weight:600;margin-bottom:16px">본인이 선택한 시간에 반드시 응시해야합니다. 신중하게 선택해주세요.</div>
         <div>
-          ${days.map(d=>{const label=`${d}요일 (저녁10시~12시)`;return`<button class="opt${sv.day===label?' on':''}" onclick="surveyState.day='${label}';R()"><div style="width:22px;height:22px;border-radius:50%;border:2px solid ${sv.day===label?'var(--blue)':'var(--g300)'};display:flex;align-items:center;justify-content:center;flex-shrink:0">${sv.day===label?'<div style="width:12px;height:12px;border-radius:50%;background:var(--blue)"></div>':''}</div><span style="font-size:15px;font-weight:${sv.day===label?'700':'500'}">${label}</span></button>`;}).join('')}
+          ${days.map(d=>{const dt=new Date(nextMon);dt.setDate(dt.getDate()+dayIdx[d]);const dateStr=(dt.getMonth()+1)+'/'+dt.getDate();const label=`${d} ${dateStr} (저녁10시~12시)`;return`<button class="opt${sv.day===label?' on':''}" onclick="surveyState.day='${label}';R()"><div style="width:22px;height:22px;border-radius:50%;border:2px solid ${sv.day===label?'var(--blue)':'var(--g300)'};display:flex;align-items:center;justify-content:center;flex-shrink:0">${sv.day===label?'<div style="width:12px;height:12px;border-radius:50%;background:var(--blue)"></div>':''}</div><span style="font-size:15px;font-weight:${sv.day===label?'700':'500'}">${label}</span></button>`;}).join('')}
         </div>
       </div>`;
   } else if(sv.step===4){

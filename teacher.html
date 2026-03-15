@@ -284,6 +284,13 @@ function getWeekRangeLabel(offsetWeeks=0){
   return `${mon.getMonth()+1}/${mon.getDate()}(${dayNames[mon.getDay()]}) ~ ${fri.getMonth()+1}/${fri.getDate()}(${dayNames[fri.getDay()]})`;
 }
 
+function getDayDate(dayName,offsetWeeks=0){
+  const dayIdx={'월요일':0,'화요일':1,'수요일':2,'목요일':3,'금요일':4,'월':0,'화':1,'수':2,'목':3,'금':4};
+  const mon=getMonday(offsetWeeks);
+  const dt=new Date(mon);dt.setDate(dt.getDate()+(dayIdx[dayName]||0));
+  return (dt.getMonth()+1)+'/'+dt.getDate();
+}
+
 function formatTime(iso){
   const d=new Date(iso);
   const month=d.getMonth()+1;
@@ -399,7 +406,7 @@ function renderStats(data){
     html+=`
       <div class="day-stat">
         <div class="day-stat-num">${dayCounts[d]}</div>
-        <div class="day-stat-label">${d}</div>
+        <div class="day-stat-label">${d} ${getDayDate(d,currentPeriod==='lastweek'?-1:0)}</div>
       </div>`;
   });
 
@@ -428,7 +435,7 @@ function renderList(data){
     html+=`
     <div class="day-group fade-in">
       <div class="day-header">
-        <h3>${dayName}</h3>
+        <h3>${dayName} <span style="font-weight:500;color:var(--sub);font-size:14px">${getDayDate(dayName,currentPeriod==='lastweek'?-1:0)}</span></h3>
         <span class="day-badge">${items.length}명</span>
       </div>`;
 
