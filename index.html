@@ -1760,53 +1760,26 @@ function rHome(){setBottom(null);
       </button>
     </div>
 
-    <!-- 5. Zoom Test Info -->
-    <div class="sec-label">줌테스트 안내</div>
-    <div class="card" style="padding:20px">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-        <div style="width:40px;height:40px;background:var(--blue-l);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px">📹</div>
-        <div>
-          <div style="font-size:14px;font-weight:700;color:var(--text)">줌 테스트</div>
-          <div style="font-size:12px;color:var(--sub);margin-top:1px">월~금 22:00 ~ 24:00</div>
+    <!-- 5. Zoom Test -->
+    <div class="sec-label">줌테스트</div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <button onclick="openZoomSheet()" style="width:100%;padding:18px 20px;border:none;background:none;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background=''">
+        <div style="width:44px;height:44px;background:var(--blue-l);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">📹</div>
+        <div style="flex:1">
+          <div style="font-size:15px;font-weight:700;color:var(--text)">줌 입장 · 상세안내</div>
+          <div style="font-size:12px;color:var(--sub);margin-top:2px">월~금 22:00 ~ 24:00</div>
         </div>
-      </div>
-      <div style="display:flex;gap:8px;margin-bottom:12px">
-        <div style="flex:1;background:var(--g50);border-radius:var(--r-sm);padding:10px 12px">
-          <div style="font-size:10px;color:var(--hint);font-weight:600;margin-bottom:2px">Zoom ID</div>
-          <div style="font-size:13px;font-weight:700;color:var(--text)">898 410 3223</div>
+        <span style="color:var(--hint);font-size:18px;font-weight:300">›</span>
+      </button>
+      <div style="height:1px;background:var(--divider);margin:0 20px"></div>
+      <button onclick="haptic('tap');surveyState={step:1,curriculum:'',teacher:'',week:'',day:''};S.scr='survey';S.dir='fwd';R()" style="width:100%;padding:16px 20px;border:none;background:none;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background=''">
+        <div style="width:44px;height:44px;background:var(--purple-l);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">📋</div>
+        <div style="flex:1">
+          <div style="font-size:15px;font-weight:700;color:var(--text)">스케줄 신청</div>
+          <div style="font-size:12px;color:var(--sub);margin-top:2px">이번 주 줌테스트 요일 선택</div>
         </div>
-        <div style="flex:1;background:var(--g50);border-radius:var(--r-sm);padding:10px 12px">
-          <div style="font-size:10px;color:var(--hint);font-weight:600;margin-bottom:2px">비밀번호</div>
-          <div style="font-size:13px;font-weight:700;color:var(--text)">9999</div>
-        </div>
-      </div>
-      <button onclick="window.open('https://zoom.us/j/89841032230?pwd=9999','_blank')" style="width:100%;padding:12px;border:none;background:var(--blue);color:white;border-radius:var(--r-md);font-size:14px;font-weight:700;cursor:pointer;transition:opacity .15s">줌 입장하기</button>
-      <button onclick="haptic('tap');surveyState={step:1,curriculum:'',teacher:'',week:'',day:''};S.scr='survey';S.dir='fwd';R()" style="width:100%;padding:12px;border:none;background:var(--blue-l);color:var(--blue);border-radius:var(--r-md);font-size:14px;font-weight:700;cursor:pointer;transition:opacity .15s;margin-top:8px">스케줄 신청</button>
-      <button onclick="const d=document.getElementById('zoomDetail');d.style.display=d.style.display==='none'?'block':'none'" style="width:100%;padding:10px;border:none;background:none;color:var(--sub);font-size:12px;font-weight:600;cursor:pointer;margin-top:8px">상세 안내 보기 ▾</button>
-      <div id="zoomDetail" style="display:none;margin-top:4px;padding:16px;background:var(--g50);border-radius:var(--r-md);font-size:12px;color:var(--text);line-height:1.8">
-        <div style="font-size:13px;font-weight:700;margin-bottom:8px">📋 응시 절차</div>
-        <div style="padding-left:4px">
-          <b>1단계:</b> 줌 입장 (카메라 반드시 ON)<br>
-          <b>2단계:</b> 채팅으로 응시 선언<br>
-          <span style="color:var(--sub);font-size:11px;padding-left:12px">"담당선생님 / 학생명 / 커리큘럼 / N주차 테스트 응시하겠습니다"</span><br>
-          <b>3단계:</b> 시험 종료 후 결과를 개인관리방에 공유<br>
-          <b>4단계:</b> 담당선생님 확인 → 통과/불통과
-        </div>
-        <div style="margin-top:12px;font-size:13px;font-weight:700;margin-bottom:8px">⚠️ 주의사항</div>
-        <div style="padding-left:4px">
-          • 시간: 월~금 저녁 <b>10:00~12:00</b><br>
-          • <b>12시 20분</b>까지 응시를 마쳐야 함<br>
-          • 12시 20분이 넘어가면 모든 테스트 종료<br>
-          • 부정행위 적발 시 → <span style="color:var(--red);font-weight:700">수강정지</span>
-        </div>
-        <div style="margin-top:12px;font-size:13px;font-weight:700;margin-bottom:8px">📊 채점 기준</div>
-        <div style="padding-left:4px">
-          • <b>80점 이상</b> → ✅ 통과<br>
-          • <b>80점 미만</b> → ❌ 불통과 (재시험 1회 가능)<br>
-          • 재시험도 불통과 시 → <span style="color:var(--red);font-weight:700">"경고"</span> 부여<br>
-          • 당일 재시험 가능 / 다른 날 재시험 가능
-        </div>
-      </div>
+        <span style="color:var(--hint);font-size:18px;font-weight:300">›</span>
+      </button>
     </div>
 
     <!-- 6. 빠른 링크 -->
@@ -2510,6 +2483,57 @@ function launchZoomPrep(){
   if(S.ti)clearInterval(S.ti);
   S.ti=setInterval(()=>{S.te=Math.floor((Date.now()-S.ts)/1000);S.tlf=Math.max(0,S.tl-S.te);const el=$('tmr');if(el){el.textContent=ft(S.tlf);el.className='timer-display'+(S.tlf<=60?' danger':S.tlf<=300?' warn':'');}if(S.tlf<=0){clearInterval(S.ti);doSub(true);}},1000);
   R();
+}
+
+// ━━ Zoom Test Sheet ━━
+function openZoomSheet(){
+  const d=document.createElement('div');d.className='sheet-overlay';d.id='zs';
+  d.innerHTML=`<div class="sheet" style="max-height:85dvh;overflow-y:auto">
+    <div class="sheet-bar"></div>
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:20px;font-weight:800;color:var(--text)">줌 테스트 안내</div>
+      <div style="font-size:13px;color:var(--sub);margin-top:4px">월~금 저녁 10:00 ~ 12:00</div>
+    </div>
+
+    <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:10px">📋 응시 절차</div>
+    <div style="background:var(--g50);border-radius:var(--r-md);padding:14px 16px;font-size:13px;color:var(--text);line-height:2;margin-bottom:16px">
+      <b>1단계</b> 줌 입장 (카메라 반드시 ON)<br>
+      <b>2단계</b> 채팅으로 응시 선언<br>
+      <div style="font-size:11px;color:var(--sub);padding:4px 0 4px 16px;line-height:1.5">"담당선생님 / 학생명 / 커리큘럼 / N주차 테스트 응시하겠습니다"</div>
+      <b>3단계</b> 시험 종료 후 결과를 개인관리방에 공유<br>
+      <b>4단계</b> 담당선생님 확인 → 통과/불통과
+    </div>
+
+    <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:10px">⚠️ 주의사항</div>
+    <div style="background:var(--g50);border-radius:var(--r-md);padding:14px 16px;font-size:13px;color:var(--text);line-height:2;margin-bottom:16px">
+      • <b>12시 20분</b>까지 응시를 마쳐야 함<br>
+      • 12시 20분 넘으면 모든 테스트 종료<br>
+      • 시험을 응시하는 모습이 반드시 보여야 함<br>
+      • 부정행위 적발 시 → <span style="color:var(--red);font-weight:700">수강정지</span>
+    </div>
+
+    <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:10px">📊 채점 기준</div>
+    <div style="background:var(--g50);border-radius:var(--r-md);padding:14px 16px;font-size:13px;color:var(--text);line-height:2;margin-bottom:20px">
+      • <b>80점 이상</b> → ✅ 통과<br>
+      • <b>80점 미만</b> → ❌ 불통과 (재시험 1회 가능)<br>
+      • 재시험도 불통과 시 → <span style="color:var(--red);font-weight:700">"경고"</span><br>
+      • 당일 재시험 / 다른 날 재시험 가능
+    </div>
+
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      <div style="flex:1;background:var(--g50);border-radius:var(--r-sm);padding:10px 12px;text-align:center">
+        <div style="font-size:10px;color:var(--hint);font-weight:600;margin-bottom:2px">Zoom ID</div>
+        <div style="font-size:14px;font-weight:700;color:var(--text)">898 410 3223</div>
+      </div>
+      <div style="flex:1;background:var(--g50);border-radius:var(--r-sm);padding:10px 12px;text-align:center">
+        <div style="font-size:10px;color:var(--hint);font-weight:600;margin-bottom:2px">비밀번호</div>
+        <div style="font-size:14px;font-weight:700;color:var(--text)">9999</div>
+      </div>
+    </div>
+    <button onclick="window.open('https://zoom.us/j/89841032230?pwd=9999','_blank')" class="btn btn-blue" style="margin-top:8px">줌 테스트 입장하기</button>
+    <button onclick="document.getElementById('zs').remove()" class="btn btn-ghost" style="margin-top:8px">닫기</button>
+  </div>`;
+  document.body.appendChild(d);
 }
 
 // ━━ Admin Login Sheet ━━
