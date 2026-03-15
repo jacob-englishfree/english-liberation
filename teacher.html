@@ -320,7 +320,14 @@ function setPeriod(p){
 }
 
 // ━━ Data ━━
+async function cleanupOldSurveys(){
+  const threeWeeksAgo=new Date();
+  threeWeeksAgo.setDate(threeWeeksAgo.getDate()-21);
+  await supabase.from('zoom_surveys').delete().lt('created_at',threeWeeksAgo.toISOString());
+}
+
 async function fetchData(){
+  await cleanupOldSurveys();
   showLoading();
   try{
     let query=supabase.from('zoom_surveys').select('*').order('created_at',{ascending:false});
