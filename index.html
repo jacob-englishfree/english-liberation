@@ -1130,6 +1130,7 @@ let MANIFEST = {"교과서":{"영어1":{"비상홍":{lessons:[1,2,3,4],dn:"비�
 })();
 
 let S={scr:'home',mode:null,sel:[],qc:20,tt:null,qs:[],ans:{},ci:0,ts:null,te:0,ti:null,tl:1200,tlf:1200,res:null,acc:{},rv:{},dir:'fwd'};
+let surveyState={step:1,curriculum:'',teacher:'',week:'',day:''};
 
 // ━━ Dark Mode ━━
 function initTheme(){const t=localStorage.getItem('el_theme')||'light';document.documentElement.setAttribute('data-theme',t);document.querySelector('meta[name="theme-color"]').content=t==='dark'?'#111111':'#FFFFFF';}
@@ -1370,7 +1371,7 @@ function animateScore(target){
 }
 
 function setBottom(html){const b=$('bottomBar');if(!html){b.style.display='none';b.innerHTML='';return;}b.innerHTML=html;b.style.display='';}
-function R(){({login:rLogin,home:rHome,learn:rLearn,record:rRecord,my:rMy,select:rSel,settings:rSet,exam:rExam,result:rResult,speedquiz:rSpeedQuiz,flashcard:rFlashcard,runnergame:rRunnerGame}[S.scr]||rLogin)();
+function R(){({login:rLogin,home:rHome,learn:rLearn,record:rRecord,my:rMy,select:rSel,settings:rSet,exam:rExam,result:rResult,speedquiz:rSpeedQuiz,flashcard:rFlashcard,runnergame:rRunnerGame,survey:rSurvey}[S.scr]||rLogin)();
   // Apply page transition direction
   const pg=app.querySelector('.page');if(pg&&S.dir){pg.classList.remove('slide-left','slide-right','tab-swap');if(S.dir==='back')pg.classList.add('slide-right');else if(S.dir==='fwd')pg.classList.add('slide-left');else if(S.dir==='tab')pg.classList.add('tab-swap');}S.dir='fwd';
   // Tab bar visibility
@@ -1710,6 +1711,7 @@ function rHome(){setBottom(null);
       </div>
       <button onclick="window.open('https://zoom.us/j/89841032230?pwd=9999','_blank')" style="width:100%;padding:12px;border:none;background:var(--blue);color:white;border-radius:var(--r-md);font-size:14px;font-weight:700;cursor:pointer;transition:opacity .15s">줌 입장하기</button>
       <div style="margin-top:10px;font-size:11px;color:var(--hint);text-align:center">⚠️ 카메라 반드시 ON · 80점 이상 통과</div>
+      <button onclick="haptic('tap');surveyState={step:1,curriculum:'',teacher:'',week:'',day:''};S.scr='survey';S.dir='fwd';R()" style="width:100%;padding:12px;border:none;background:var(--blue-l);color:var(--blue);border-radius:var(--r-md);font-size:14px;font-weight:700;cursor:pointer;margin-top:8px;transition:opacity .15s">스케줄 신청</button>
     </div>
 
     <!-- 7. Warning Tracker -->
@@ -1801,6 +1803,180 @@ function rHome(){setBottom(null);
     <div style="text-align:center;padding:24px 20px 12px;font-size:11px;color:var(--hint)">© 영어해방공식 · 온라인 영어학원</div>
     <div class="tab-spacer"></div>
   </div>`;
+}
+
+// ━━ SURVEY (줌 테스트 스케줄 설문) ━━
+function getSurveyHistory(){try{return JSON.parse(localStorage.getItem('el_survey_history'))||[];}catch(e){return[];}}
+function saveSurveyEntry(entry){const h=getSurveyHistory();h.push(entry);try{localStorage.setItem('el_survey_history',JSON.stringify(h.slice(-50)));}catch(e){}}
+function getThisWeekSurvey(){
+  const h=getSurveyHistory();if(!h.length)return null;
+  const now=new Date();const day=now.getDay();const diff=now.getDate()-day+(day===0?-6:1);
+  const weekStart=new Date(now.getFullYear(),now.getMonth(),diff);weekStart.setHours(0,0,0,0);
+  const weekEnd=new Date(weekStart);weekEnd.setDate(weekEnd.getDate()+7);
+  return h.filter(e=>e.timestamp>=weekStart.getTime()&&e.timestamp<weekEnd.getTime()).pop()||null;
+}
+function rSurvey(){
+  const sv=surveyState;
+  const teacherWeeks={'곽주엽T':8,'양윤성T':14,'양현서T':14,'강제니T':14,'한민준T':14};
+  const teacherDays={'곽주엽T':['월','화','수','목']};
+  const defaultDays=['월','화','수','목','금'];
+  const curriculums=['정규반(기출제로원)','내신의기술'];
+  const teachers=['양윤성T','양현서T','곽주엽T','강제니T','한민준T'];
+
+  const canNext=(()=>{
+    if(sv.step===1)return sv.curriculum&&sv.teacher;
+    if(sv.step===2)return sv.week;
+    if(sv.step===3)return sv.day;
+    return true;
+  })();
+
+  // Previous submission this week
+  const prev=getThisWeekSurvey();
+
+  let body='';
+  if(sv.step===1){
+    const nameVal=esc(profile.name||'');
+    const schoolVal=esc((profile.grade||'')+'/'+(profile.school||''));
+    body=`
+      <div style="padding:0 20px;margin-top:8px">
+        <div style="margin-bottom:20px">
+          <label style="font-size:13px;font-weight:600;color:var(--sub);display:block;margin-bottom:6px">학생이름</label>
+          <input class="input" value="${nameVal}" readonly style="background:var(--g50);color:var(--sub)">
+        </div>
+        <div style="margin-bottom:20px">
+          <label style="font-size:13px;font-weight:600;color:var(--sub);display:block;margin-bottom:6px">학교/학년</label>
+          <input class="input" value="${schoolVal}" readonly style="background:var(--g50);color:var(--sub)">
+        </div>
+        <div style="margin-bottom:20px">
+          <label style="font-size:13px;font-weight:600;color:var(--sub);display:block;margin-bottom:6px">수강중인 정규커리큘럼</label>
+          <div class="chips">${curriculums.map(c=>`<button class="chip${sv.curriculum===c?' on':''}" onclick="surveyState.curriculum='${c}';R()">${esc(c)}</button>`).join('')}</div>
+        </div>
+        <div style="margin-bottom:20px">
+          <label style="font-size:13px;font-weight:600;color:var(--sub);display:block;margin-bottom:6px">담당 선생님</label>
+          <div class="chips">${teachers.map(t=>`<button class="chip${sv.teacher===t?' on':''}" onclick="surveyState.teacher='${t}';surveyState.week='';surveyState.day='';R()">${esc(t)}</button>`).join('')}</div>
+        </div>
+        ${prev?`<div class="card" style="margin:0;background:var(--blue-xl);border:1.5px solid var(--blue);padding:14px 16px">
+          <div style="font-size:12px;font-weight:700;color:var(--blue);margin-bottom:6px">이번 주 제출 내역</div>
+          <div style="font-size:13px;color:var(--text);line-height:1.7">
+            ${esc(prev.curriculum)} · ${esc(prev.teacher)}<br>
+            ${esc(prev.week)} · ${esc(prev.day)} (저녁10시~12시)
+          </div>
+          <div style="font-size:11px;color:var(--sub);margin-top:4px">다시 제출하면 이전 내역이 유지되며 새 내역이 추가됩니다.</div>
+        </div>`:''}
+      </div>`;
+  } else if(sv.step===2){
+    const maxWeek=teacherWeeks[sv.teacher]||14;
+    body=`
+      <div style="padding:0 20px;margin-top:8px">
+        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">주차별 테스트 선택 (${esc(sv.teacher)})</div>
+        <div style="font-size:12px;color:var(--sub);margin-bottom:16px">${sv.teacher==='곽주엽T'?'주엽T/세인T':esc(sv.teacher)} 1~${maxWeek}주차 중 선택</div>
+        <div style="max-height:calc(100dvh - 260px);overflow-y:auto;-webkit-overflow-scrolling:touch">
+          ${Array.from({length:maxWeek},(_,i)=>{const w=`${i+1}주차 테스트`;return`<button class="opt${sv.week===w?' on':''}" onclick="surveyState.week='${w}';R()"><div style="width:22px;height:22px;border-radius:50%;border:2px solid ${sv.week===w?'var(--blue)':'var(--g300)'};display:flex;align-items:center;justify-content:center;flex-shrink:0">${sv.week===w?'<div style="width:12px;height:12px;border-radius:50%;background:var(--blue)"></div>':''}</div><span style="font-size:15px;font-weight:${sv.week===w?'700':'500'}">${w}</span></button>`;}).join('')}
+        </div>
+      </div>`;
+  } else if(sv.step===3){
+    const days=teacherDays[sv.teacher]||defaultDays;
+    body=`
+      <div style="padding:0 20px;margin-top:8px">
+        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">${esc(sv.teacher)} 테스트 응시가능시간</div>
+        <div style="font-size:12px;color:var(--sub);margin-bottom:6px;line-height:1.6">*당일 응시가능인원은 선착순입니다.<br>*선착순에서 마감되며, 요일선택이 가능하다면 자리가 있는것입니다!</div>
+        <div style="font-size:12px;color:var(--red);font-weight:600;margin-bottom:16px">본인이 선택한 시간에 반드시 응시해야합니다. 신중하게 선택해주세요.</div>
+        <div>
+          ${days.map(d=>{const label=`${d}요일 (저녁10시~12시)`;return`<button class="opt${sv.day===label?' on':''}" onclick="surveyState.day='${label}';R()"><div style="width:22px;height:22px;border-radius:50%;border:2px solid ${sv.day===label?'var(--blue)':'var(--g300)'};display:flex;align-items:center;justify-content:center;flex-shrink:0">${sv.day===label?'<div style="width:12px;height:12px;border-radius:50%;background:var(--blue)"></div>':''}</div><span style="font-size:15px;font-weight:${sv.day===label?'700':'500'}">${label}</span></button>`;}).join('')}
+        </div>
+      </div>`;
+  } else if(sv.step===4){
+    body=`
+      <div style="padding:0 20px;margin-top:8px">
+        <div style="text-align:center;margin-bottom:24px">
+          <div style="font-size:48px;margin-bottom:8px">✅</div>
+          <div style="font-size:18px;font-weight:800;color:var(--text)">제출 완료</div>
+          <div style="font-size:13px;color:var(--sub);margin-top:4px">줌 테스트 스케줄이 등록되었습니다.</div>
+        </div>
+        <div class="card" style="margin:0;padding:16px 18px">
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:13px;color:var(--sub)">학생이름</span>
+              <span style="font-size:14px;font-weight:600;color:var(--text)">${esc(profile.name)}</span>
+            </div>
+            <div style="height:1px;background:var(--divider)"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:13px;color:var(--sub)">학교/학년</span>
+              <span style="font-size:14px;font-weight:600;color:var(--text)">${esc((profile.grade||'')+'/'+(profile.school||''))}</span>
+            </div>
+            <div style="height:1px;background:var(--divider)"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:13px;color:var(--sub)">커리큘럼</span>
+              <span style="font-size:14px;font-weight:600;color:var(--text)">${esc(sv.curriculum)}</span>
+            </div>
+            <div style="height:1px;background:var(--divider)"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:13px;color:var(--sub)">담당 선생님</span>
+              <span style="font-size:14px;font-weight:600;color:var(--text)">${esc(sv.teacher)}</span>
+            </div>
+            <div style="height:1px;background:var(--divider)"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:13px;color:var(--sub)">테스트 주차</span>
+              <span style="font-size:14px;font-weight:600;color:var(--text)">${esc(sv.week)}</span>
+            </div>
+            <div style="height:1px;background:var(--divider)"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:13px;color:var(--sub)">응시 시간</span>
+              <span style="font-size:14px;font-weight:600;color:var(--blue)">${esc(sv.day)}</span>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // Bottom button
+  let bottomHtml='';
+  if(sv.step<4){
+    bottomHtml=`<button class="btn btn-blue" ${canNext?'':`disabled`} onclick="surveyStepNext()">${sv.step===3?'제출하기':'다음'}</button>`;
+  } else {
+    bottomHtml=`<button class="btn btn-blue" onclick="S.scr='home';S.dir='back';R()">홈으로 돌아가기</button>`;
+  }
+  setBottom(bottomHtml);
+
+  const stepLabels=['기본 정보','주차 선택','시간 선택','제출 완료'];
+  app.innerHTML=`<div class="page">
+    <div class="nav">
+      <button class="nav-back" onclick="${sv.step>1&&sv.step<4?'surveyState.step--;R()':'S.scr=\\'home\\';S.dir=\\'back\\';R()'}">←</button>
+      <div class="nav-title">줌 테스트 스케줄 설문</div>
+    </div>
+    <!-- Step indicator -->
+    <div style="display:flex;gap:4px;padding:0 20px;margin-bottom:16px">
+      ${[1,2,3,4].map(i=>`<div style="flex:1;height:3px;border-radius:2px;background:${sv.step>=i?'var(--blue)':'var(--g200)'};transition:background .2s"></div>`).join('')}
+    </div>
+    <div style="padding:0 20px;margin-bottom:4px">
+      <span style="font-size:12px;font-weight:700;color:var(--blue)">STEP ${sv.step}</span>
+      <span style="font-size:12px;color:var(--sub);margin-left:6px">${stepLabels[sv.step-1]}</span>
+    </div>
+    ${body}
+    <div class="bottom-spacer"></div>
+  </div>`;
+}
+function surveyStepNext(){
+  const sv=surveyState;
+  if(sv.step===1){if(!sv.curriculum||!sv.teacher){toast('모든 항목을 선택해주세요');return;}sv.step=2;}
+  else if(sv.step===2){if(!sv.week){toast('주차를 선택해주세요');return;}sv.step=3;}
+  else if(sv.step===3){
+    if(!sv.day){toast('요일을 선택해주세요');return;}
+    // Save to localStorage
+    saveSurveyEntry({
+      name:profile.name,
+      school:profile.school,
+      grade:profile.grade,
+      curriculum:sv.curriculum,
+      teacher:sv.teacher,
+      week:sv.week,
+      day:sv.day,
+      timestamp:Date.now()
+    });
+    haptic('submit');
+    sv.step=4;
+  }
+  R();
 }
 
 // ━━ LEARN (학습 탭) ━━
