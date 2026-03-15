@@ -1135,7 +1135,7 @@ let MANIFEST = {"교과서":{"영어1":{"비상홍":{lessons:[1,2,3,4],dn:"비�
 })();
 
 let S={scr:'home',mode:null,sel:[],qc:20,tt:null,qs:[],ans:{},ci:0,ts:null,te:0,ti:null,tl:1200,tlf:1200,res:null,acc:{},rv:{},dir:'fwd'};
-let surveyState={step:1,curriculum:'',teacher:'',week:'',day:''};
+let surveyState={step:1,curriculum:'',teacher:'',week:'',day:'',name:'',school:'',grade:''};
 
 // ━━ Dark Mode ━━
 function initTheme(){const t=localStorage.getItem('el_theme')||'light';document.documentElement.setAttribute('data-theme',t);document.querySelector('meta[name="theme-color"]').content=t==='dark'?'#111111':'#FFFFFF';}
@@ -1777,7 +1777,7 @@ function rHome(){setBottom(null);
         const submitted=getThisWeekSurvey();
         const now=new Date();const isSunAfter10=now.getDay()===0&&now.getHours()>=22;
         const isOpen=now.getDay()===0?now.getHours()>=22:now.getDay()>=1;
-        return `<button onclick="haptic('tap');surveyState={step:1,curriculum:'',teacher:'',week:'',day:''};S.scr='survey';S.dir='fwd';R()" style="width:100%;padding:16px 20px;border:none;background:none;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background=''">
+        return `<button onclick="haptic('tap');surveyState={step:1,curriculum:'',teacher:'',week:'',day:'',name:'',school:'',grade:''};S.scr='survey';S.dir='fwd';R()" style="width:100%;padding:16px 20px;border:none;background:none;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background=''">
           <div style="width:44px;height:44px;background:${submitted?'var(--green-l)':isSunAfter10?'var(--red-l)':'var(--purple-l)'};border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${submitted?'✅':'📋'}</div>
           <div style="flex:1">
             <div style="display:flex;align-items:center;gap:6px">
@@ -1973,12 +1973,12 @@ function rSurvey(){
           <div style="display:flex;flex-direction:column;gap:12px">
             <div style="display:flex;justify-content:space-between;align-items:center">
               <span style="font-size:13px;color:var(--sub)">학생이름</span>
-              <span style="font-size:14px;font-weight:600;color:var(--text)">${esc(profile.name)}</span>
+              <span style="font-size:14px;font-weight:600;color:var(--text)">${esc(sv.name)}</span>
             </div>
             <div style="height:1px;background:var(--divider)"></div>
             <div style="display:flex;justify-content:space-between;align-items:center">
               <span style="font-size:13px;color:var(--sub)">학교/학년</span>
-              <span style="font-size:14px;font-weight:600;color:var(--text)">${esc((profile.grade||'')+'/'+(profile.school||''))}</span>
+              <span style="font-size:14px;font-weight:600;color:var(--text)">${esc(sv.grade+'/'+sv.school)}</span>
             </div>
             <div style="height:1px;background:var(--divider)"></div>
             <div style="display:flex;justify-content:space-between;align-items:center">
@@ -2043,6 +2043,7 @@ function surveyStepNext(){
     if(!svS){toast('학교를 입력해주세요');$('svSchool').focus();return;}
     if(!svG){toast('학년을 선택해주세요');return;}
     if(!sv.curriculum||!sv.teacher){toast('커리큘럼과 담당 선생님을 선택해주세요');return;}
+    sv.name=svN;sv.school=svS;sv.grade=svG;
     sP({name:svN,school:svS,grade:svG});
     sv.step=2;
   }
@@ -2051,9 +2052,9 @@ function surveyStepNext(){
     if(!sv.day){toast('요일을 선택해주세요');return;}
     // Save to localStorage
     saveSurveyEntry({
-      name:profile.name,
-      school:profile.school,
-      grade:profile.grade,
+      name:sv.name,
+      school:sv.school,
+      grade:sv.grade,
       curriculum:sv.curriculum,
       teacher:sv.teacher,
       week:sv.week,
