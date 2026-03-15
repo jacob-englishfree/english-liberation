@@ -1726,12 +1726,13 @@ function rHome(){setBottom(null);
     </div>`;})()}
 
     <!-- 4. Daily Checklist -->
-    <div class="sec-label">이번 주 학습 현황 (${getWeekRange()})</div>
+    <div class="sec-label">오늘의 학습 체크</div>
     <div class="card" style="padding:20px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-        <div style="font-size:15px;font-weight:700;color:var(--text)">오늘의 학습 체크</div>
-        <span style="font-size:13px;font-weight:700;color:var(--blue)">${clDone}/4 완료</span>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <div style="font-size:15px;font-weight:700;color:var(--text)">오늘 한 것 체크</div>
+        <span style="font-size:13px;font-weight:700;color:var(--blue)">${clDone}/4</span>
       </div>
+      <div style="font-size:11px;color:var(--hint);margin-bottom:14px">해당 항목만 체크하세요</div>
       <div style="height:6px;background:var(--g100);border-radius:3px;overflow:hidden;margin-bottom:16px">
         <div style="height:100%;width:${clPct}%;background:${clDone===4?'var(--green)':'var(--blue)'};border-radius:3px;transition:width .3s var(--ease)"></div>
       </div>
@@ -1766,14 +1767,56 @@ function rHome(){setBottom(null);
         </div>
       </div>
       <button onclick="window.open('https://zoom.us/j/89841032230?pwd=9999','_blank')" style="width:100%;padding:12px;border:none;background:var(--blue);color:white;border-radius:var(--r-md);font-size:14px;font-weight:700;cursor:pointer;transition:opacity .15s">줌 입장하기</button>
-      <div style="margin-top:10px;font-size:11px;color:var(--hint);text-align:center">⚠️ 카메라 반드시 ON · 80점 이상 통과</div>
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <button onclick="haptic('tap');surveyState={step:1,curriculum:'',teacher:'',week:'',day:''};S.scr='survey';S.dir='fwd';R()" style="flex:1;padding:12px;border:none;background:var(--blue-l);color:var(--blue);border-radius:var(--r-md);font-size:14px;font-weight:700;cursor:pointer;transition:opacity .15s">스케줄 신청</button>
-        <button onclick="haptic('tap');startZoomPrep()" style="flex:1;padding:12px;border:none;background:var(--purple-l);color:var(--purple);border-radius:var(--r-md);font-size:14px;font-weight:700;cursor:pointer;transition:opacity .15s">모의연습</button>
+      <button onclick="haptic('tap');surveyState={step:1,curriculum:'',teacher:'',week:'',day:''};S.scr='survey';S.dir='fwd';R()" style="width:100%;padding:12px;border:none;background:var(--blue-l);color:var(--blue);border-radius:var(--r-md);font-size:14px;font-weight:700;cursor:pointer;transition:opacity .15s;margin-top:8px">스케줄 신청</button>
+      <button onclick="const d=document.getElementById('zoomDetail');d.style.display=d.style.display==='none'?'block':'none'" style="width:100%;padding:10px;border:none;background:none;color:var(--sub);font-size:12px;font-weight:600;cursor:pointer;margin-top:8px">상세 안내 보기 ▾</button>
+      <div id="zoomDetail" style="display:none;margin-top:4px;padding:16px;background:var(--g50);border-radius:var(--r-md);font-size:12px;color:var(--text);line-height:1.8">
+        <div style="font-size:13px;font-weight:700;margin-bottom:8px">📋 응시 절차</div>
+        <div style="padding-left:4px">
+          <b>1단계:</b> 줌 입장 (카메라 반드시 ON)<br>
+          <b>2단계:</b> 채팅으로 응시 선언<br>
+          <span style="color:var(--sub);font-size:11px;padding-left:12px">"담당선생님 / 학생명 / 커리큘럼 / N주차 테스트 응시하겠습니다"</span><br>
+          <b>3단계:</b> 시험 종료 후 결과를 개인관리방에 공유<br>
+          <b>4단계:</b> 담당선생님 확인 → 통과/불통과
+        </div>
+        <div style="margin-top:12px;font-size:13px;font-weight:700;margin-bottom:8px">⚠️ 주의사항</div>
+        <div style="padding-left:4px">
+          • 시간: 월~금 저녁 <b>10:00~12:00</b><br>
+          • <b>12시 20분</b>까지 응시를 마쳐야 함<br>
+          • 12시 20분이 넘어가면 모든 테스트 종료<br>
+          • 부정행위 적발 시 → <span style="color:var(--red);font-weight:700">수강정지</span>
+        </div>
+        <div style="margin-top:12px;font-size:13px;font-weight:700;margin-bottom:8px">📊 채점 기준</div>
+        <div style="padding-left:4px">
+          • <b>80점 이상</b> → ✅ 통과<br>
+          • <b>80점 미만</b> → ❌ 불통과 (재시험 1회 가능)<br>
+          • 재시험도 불통과 시 → <span style="color:var(--red);font-weight:700">"경고"</span> 부여<br>
+          • 당일 재시험 가능 / 다른 날 재시험 가능
+        </div>
       </div>
     </div>
 
-    <!-- 6. 입시 뉴스 -->
+    <!-- 6. 빠른 링크 -->
+    <div class="sec-label">우리 학원</div>
+    <div style="padding:0 20px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button onclick="window.open('https://engeng.liveklass.com/','_blank')" style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--card);border-radius:var(--r-lg);border:none;cursor:pointer;box-shadow:var(--sh-sm);text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background='var(--card)'">
+        <div style="width:36px;height:36px;background:var(--blue-l);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🎓</div>
+        <div><div style="font-size:13px;font-weight:700;color:var(--text)">수강신청</div><div style="font-size:10px;color:var(--hint);margin-top:1px">LiveKlass</div></div>
+      </button>
+      <button onclick="window.open('http://pf.kakao.com/_xoxoGfG','_blank')" style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--card);border-radius:var(--r-lg);border:none;cursor:pointer;box-shadow:var(--sh-sm);text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background='var(--card)'">
+        <div style="width:36px;height:36px;background:var(--yellow-l);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">💬</div>
+        <div><div style="font-size:13px;font-weight:700;color:var(--text)">카카오톡</div><div style="font-size:10px;color:var(--hint);margin-top:1px">상담하기</div></div>
+      </button>
+      <button onclick="window.open('https://discord.gg/hBgphumrca','_blank')" style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--card);border-radius:var(--r-lg);border:none;cursor:pointer;box-shadow:var(--sh-sm);text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background='var(--card)'">
+        <div style="width:36px;height:36px;background:var(--purple-l);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🎮</div>
+        <div><div style="font-size:13px;font-weight:700;color:var(--text)">디스코드</div><div style="font-size:10px;color:var(--hint);margin-top:1px">커뮤니티</div></div>
+      </button>
+      <button onclick="window.open('https://cafe.naver.com/englishfree2','_blank')" style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--card);border-radius:var(--r-lg);border:none;cursor:pointer;box-shadow:var(--sh-sm);text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background='var(--card)'">
+        <div style="width:36px;height:36px;background:var(--green-l);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">☕</div>
+        <div><div style="font-size:13px;font-weight:700;color:var(--text)">네이버카페</div><div style="font-size:10px;color:var(--hint);margin-top:1px">공지·자료</div></div>
+      </button>
+    </div>
+
+    <!-- 7. 입시 뉴스 -->
     <div class="sec-label">입시 뉴스</div>
     <div class="card" style="padding:4px 20px" id="newsArea">
       <div style="text-align:center;padding:16px;font-size:13px;color:var(--hint)">뉴스를 불러오는 중...</div>
