@@ -426,6 +426,7 @@ input,select{font-family:inherit}
 /* Responsive */
 @media(max-width:380px){.act-grid{flex-wrap:wrap}.info-grid{grid-template-columns:1fr}.score-num{font-size:56px}}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div class="app" id="app"></div>
@@ -439,6 +440,10 @@ input,select{font-family:inherit}
 <div id="toast"></div>
 <canvas id="confetti"></canvas>
 <script>
+const SUPABASE_URL='https://awtqtubyymjtkhrigqhw.supabase.co';
+const SUPABASE_KEY='sb_publishable_BImJm2LP7QaWtqoa6uvctw_w2QpAXUg';
+const supabase=window.supabase?window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY):null;
+
 const FALLBACK_FULL_PASSAGE=`Be Proud of Who You Are
 Laura Thompson
 Hello, my name is Laura Thompson, and I'm a guidance counselor at the local college. I also have a social media channel where I give advice to young students like you. Today I'd like to talk to you about two things that I hope will inspire you.
@@ -1807,7 +1812,22 @@ function rHome(){setBottom(null);
 
 // ━━ SURVEY (줌 테스트 스케줄 설문) ━━
 function getSurveyHistory(){try{return JSON.parse(localStorage.getItem('el_survey_history'))||[];}catch(e){return[];}}
-function saveSurveyEntry(entry){const h=getSurveyHistory();h.push(entry);try{localStorage.setItem('el_survey_history',JSON.stringify(h.slice(-50)));}catch(e){}}
+function saveSurveyEntry(entry){
+  const h=getSurveyHistory();h.push(entry);
+  try{localStorage.setItem('el_survey_history',JSON.stringify(h.slice(-50)));}catch(e){}
+  // Save to Supabase
+  if(supabase){
+    supabase.from('zoom_surveys').insert({
+      name:entry.name,
+      school:entry.school,
+      grade:entry.grade,
+      curriculum:entry.curriculum,
+      teacher:entry.teacher,
+      week:entry.week,
+      day:entry.day
+    }).then(({error})=>{if(error)console.error('Supabase error:',error);});
+  }
+}
 function getThisWeekSurvey(){
   const h=getSurveyHistory();if(!h.length)return null;
   const now=new Date();const day=now.getDay();const diff=now.getDate()-day+(day===0?-6:1);

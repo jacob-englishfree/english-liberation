@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>줌 테스트 스케줄 관리 — 영어해방공식</title>
+<meta name="theme-color" content="#FFFFFF">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   TOSS DESIGN SYSTEM
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+:root {
+  --blue: #3182F6;
+  --blue-d: #1B64DA;
+  --blue-l: #E8F3FF;
+  --blue-xl: #F5F9FF;
+  --red: #F04452;
+  --red-l: #FFF0F0;
+  --green: #00C072;
+  --green-l: #E8FAF0;
+  --yellow: #F59E0B;
+  --yellow-l: #FFF8E1;
+  --purple: #8B5CF6;
+  --purple-l: #F3EEFF;
+
+  --g900: #191F28;
+  --g800: #333D4B;
+  --g700: #4E5968;
+  --g600: #6B7684;
+  --g500: #8B95A1;
+  --g400: #B0B8C1;
+  --g300: #D1D6DB;
+  --g200: #E5E8EB;
+  --g100: #F2F4F6;
+  --g50:  #F8F9FA;
+  --white: #FFFFFF;
+
+  --bg: var(--g100);
+  --card: var(--white);
+  --text: var(--g900);
+  --sub: var(--g600);
+  --hint: var(--g400);
+  --border: var(--g200);
+  --divider: var(--g100);
+
+  --r-xl: 20px;
+  --r-lg: 16px;
+  --r-md: 12px;
+  --r-sm: 8px;
+
+  --sh-sm: 0 1px 2px rgba(0,0,0,.04);
+  --sh-md: 0 2px 8px rgba(0,0,0,.06);
+  --sh-lg: 0 8px 24px rgba(0,0,0,.08);
+
+  --ease: cubic-bezier(.22,1,.36,1);
+  --ease-snap: cubic-bezier(.2,.9,.3,1);
+  --ease-spring: cubic-bezier(.34,1.56,.64,1);
+  --ease-out: cubic-bezier(.16,1,.3,1);
+  --dur: .2s;
+  --dur-slow: .35s;
+
+  --nav-bg: rgba(255,255,255,.72);
+}
+
+[data-theme="dark"] {
+  --blue-l: #1A2F4D;
+  --blue-xl: #141E30;
+  --red-l: #3D1A1E;
+  --green-l: #0F2E1F;
+  --yellow-l: #2E2510;
+  --purple-l: #1E1535;
+
+  --g900: #ECECEC;
+  --g800: #D1D1D1;
+  --g700: #B0B0B0;
+  --g600: #8E8E8E;
+  --g500: #6E6E6E;
+  --g400: #555555;
+  --g300: #3A3A3A;
+  --g200: #2C2C2C;
+  --g100: #222222;
+  --g50:  #1C1C1C;
+  --white: #171717;
+
+  --bg: #111111;
+  --card: #1A1A1A;
+  --text: #ECECEC;
+  --sub: #8E8E8E;
+  --hint: #555555;
+  --border: #2C2C2C;
+  --divider: #222222;
+
+  --sh-sm: 0 1px 2px rgba(0,0,0,.2);
+  --sh-md: 0 2px 8px rgba(0,0,0,.3);
+  --sh-lg: 0 8px 24px rgba(0,0,0,.4);
+
+  --nav-bg: rgba(17,17,17,.85);
+}
+
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{font-size:16px;scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{font-family:'Noto Sans KR',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;line-height:1.5;overflow-x:hidden}
+button{font-family:inherit;cursor:pointer}
+
+.app{max-width:600px;margin:0 auto;min-height:100dvh;background:var(--bg);position:relative;padding-bottom:40px}
+
+/* Skeleton */
+.skeleton{background:var(--g200);border-radius:var(--r-md);position:relative;overflow:hidden}
+.skeleton::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);animation:shimmer 1.5s infinite}
+[data-theme="dark"] .skeleton::after{background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent)}
+@keyframes shimmer{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+
+/* Header */
+.header{padding:32px 20px 20px;text-align:center}
+.header h1{font-size:24px;font-weight:800;letter-spacing:-.5px;line-height:1.3}
+.header p{font-size:13px;font-weight:500;color:var(--sub);margin-top:4px}
+
+/* Section */
+.section{padding:0 16px;margin-bottom:16px}
+.sec-label{font-size:13px;font-weight:600;color:var(--sub);margin-bottom:8px}
+
+/* Card */
+.card{background:var(--card);border-radius:var(--r-lg);padding:20px;box-shadow:var(--sh-sm);margin-bottom:12px}
+
+/* Chips */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{height:40px;padding:0 16px;border-radius:20px;font-size:13px;font-weight:500;border:1.5px solid var(--border);background:var(--white);display:inline-flex;align-items:center;transition:all .12s var(--ease-snap);user-select:none;color:var(--text)}
+.chip:active{transform:scale(.92)}
+.chip.on{border-color:var(--blue);background:var(--blue-l);color:var(--blue);font-weight:600}
+
+/* Toggle */
+.toggle-wrap{display:flex;background:var(--g200);border-radius:var(--r-sm);padding:3px;gap:2px}
+.toggle-btn{flex:1;height:36px;border:none;border-radius:6px;font-size:13px;font-weight:600;background:transparent;color:var(--sub);transition:all .15s var(--ease-snap)}
+.toggle-btn.on{background:var(--card);color:var(--text);box-shadow:var(--sh-sm)}
+
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat-box{background:var(--card);border-radius:var(--r-md);padding:14px 12px;text-align:center;box-shadow:var(--sh-sm)}
+.stat-num{font-size:28px;font-weight:900;color:var(--blue);font-variant-numeric:tabular-nums}
+.stat-label{font-size:11px;font-weight:600;color:var(--sub);margin-top:2px}
+
+.stat-total{background:var(--blue);border-radius:var(--r-md);padding:16px;text-align:center;box-shadow:var(--sh-sm)}
+.stat-total .stat-num{color:white;font-size:36px}
+.stat-total .stat-label{color:rgba(255,255,255,.7)}
+
+/* Day Group */
+.day-group{margin-bottom:16px}
+.day-header{display:flex;align-items:center;gap:8px;padding:12px 4px 8px}
+.day-header h3{font-size:16px;font-weight:700}
+.day-badge{background:var(--blue);color:white;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px}
+
+/* Student Card */
+.student-card{background:var(--card);border-radius:var(--r-md);padding:14px 16px;margin-bottom:8px;box-shadow:var(--sh-sm);display:flex;align-items:center;gap:12px}
+.student-avatar{width:40px;height:40px;border-radius:50%;background:var(--blue-l);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:var(--blue);flex-shrink:0}
+.student-info{flex:1;min-width:0}
+.student-name{font-size:15px;font-weight:700}
+.student-meta{font-size:12px;color:var(--sub);margin-top:2px;display:flex;flex-wrap:wrap;gap:4px}
+.student-meta span{display:inline-flex;align-items:center;gap:2px}
+.student-time{font-size:11px;color:var(--hint);font-weight:500;flex-shrink:0;text-align:right}
+.meta-tag{display:inline-block;padding:1px 6px;border-radius:4px;font-size:11px;font-weight:600;background:var(--g100);color:var(--sub)}
+
+/* Toolbar */
+.toolbar{display:flex;align-items:center;gap:8px;padding:0 16px;margin-bottom:16px}
+.toolbar-btn{height:40px;padding:0 16px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;font-weight:600;background:var(--card);color:var(--text);display:inline-flex;align-items:center;gap:6px;transition:all .12s var(--ease-snap)}
+.toolbar-btn:active{transform:scale(.95)}
+.toolbar-btn.danger{border-color:var(--red);color:var(--red)}
+.toolbar-btn.danger:active{background:var(--red-l)}
+.updated-text{font-size:11px;color:var(--hint);margin-left:auto;font-weight:500}
+
+/* Day Stats Row */
+.day-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:4px}
+.day-stat{background:var(--card);border-radius:var(--r-sm);padding:10px 6px;text-align:center;box-shadow:var(--sh-sm)}
+.day-stat-num{font-size:20px;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums}
+.day-stat-label{font-size:11px;font-weight:600;color:var(--sub);margin-top:2px}
+
+/* Empty State */
+.empty-state{text-align:center;padding:48px 20px;color:var(--hint)}
+.empty-state .icon{font-size:48px;margin-bottom:12px}
+.empty-state p{font-size:14px;font-weight:500}
+
+/* Loading skeleton cards */
+.skel-card{height:68px;margin-bottom:8px}
+.skel-stat{height:80px}
+.skel-chip{width:72px;height:40px;border-radius:20px}
+
+/* Fade animation */
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn .25s var(--ease-out)}
+
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>줌 테스트 스케줄 관리</h1>
+    <p>영어해방공식 · 선생님 전용</p>
+  </div>
+
+  <!-- Filter: Teacher -->
+  <div class="section">
+    <div class="sec-label">선생님 필터</div>
+    <div class="chips" id="teacherChips">
+      <button class="chip on" onclick="setTeacher('전체')">전체</button>
+      <button class="chip" onclick="setTeacher('양윤성T')">양윤성T</button>
+      <button class="chip" onclick="setTeacher('양현서T')">양현서T</button>
+      <button class="chip" onclick="setTeacher('곽주엽T')">곽주엽T</button>
+      <button class="chip" onclick="setTeacher('강제니T')">강제니T</button>
+      <button class="chip" onclick="setTeacher('한민준T')">한민준T</button>
+    </div>
+  </div>
+
+  <!-- Filter: Period Toggle -->
+  <div class="section">
+    <div class="toggle-wrap">
+      <button class="toggle-btn on" id="toggleWeek" onclick="setPeriod('week')">이번 주</button>
+      <button class="toggle-btn" id="toggleAll" onclick="setPeriod('all')">전체</button>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <button class="toolbar-btn" onclick="fetchData()">새로고침</button>
+    <button class="toolbar-btn danger" onclick="resetWeek()">이번 주 초기화</button>
+    <span class="updated-text" id="updatedAt">-</span>
+  </div>
+
+  <!-- Stats -->
+  <div class="section" id="statsSection">
+    <div id="statsContent">
+      <div class="stats-grid">
+        <div class="skeleton skel-stat"></div>
+        <div class="skeleton skel-stat"></div>
+        <div class="skeleton skel-stat"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Student List -->
+  <div class="section" id="listSection">
+    <div id="listContent">
+      <div class="skeleton skel-card"></div>
+      <div class="skeleton skel-card"></div>
+      <div class="skeleton skel-card"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const SUPABASE_URL='https://awtqtubyymjtkhrigqhw.supabase.co';
+const SUPABASE_KEY='sb_publishable_BImJm2LP7QaWtqoa6uvctw_w2QpAXUg';
+const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+const DAYS=['월요일','화요일','수요일','목요일','금요일'];
+const DAY_SHORT=['월','화','수','목','금'];
+
+let currentTeacher='전체';
+let currentPeriod='week';
+let allData=[];
+let refreshTimer=null;
+
+// ━━ Helpers ━━
+function getMonday(){
+  const now=new Date();
+  const day=now.getDay();
+  const diff=now.getDate()-day+(day===0?-6:1);
+  const mon=new Date(now.getFullYear(),now.getMonth(),diff);
+  mon.setHours(0,0,0,0);
+  return mon;
+}
+
+function formatTime(iso){
+  const d=new Date(iso);
+  const month=d.getMonth()+1;
+  const date=d.getDate();
+  const h=d.getHours();
+  const m=String(d.getMinutes()).padStart(2,'0');
+  return `${month}/${date} ${h}:${m}`;
+}
+
+function getInitial(name){
+  if(!name)return '?';
+  return name.charAt(0);
+}
+
+// ━━ Filters ━━
+function setTeacher(t){
+  currentTeacher=t;
+  document.querySelectorAll('#teacherChips .chip').forEach(c=>{
+    c.classList.toggle('on',c.textContent===t);
+  });
+  render();
+}
+
+function setPeriod(p){
+  currentPeriod=p;
+  document.getElementById('toggleWeek').classList.toggle('on',p==='week');
+  document.getElementById('toggleAll').classList.toggle('on',p==='all');
+  fetchData();
+}
+
+// ━━ Data ━━
+async function fetchData(){
+  showLoading();
+  try{
+    let query=supabase.from('zoom_surveys').select('*').order('created_at',{ascending:false});
+
+    if(currentPeriod==='week'){
+      const monday=getMonday();
+      query=query.gte('created_at',monday.toISOString());
+    }
+
+    const {data,error}=await query;
+    if(error){console.error('Fetch error:',error);return;}
+
+    allData=data||[];
+    document.getElementById('updatedAt').textContent='업데이트: '+formatTime(new Date().toISOString());
+    render();
+  }catch(e){
+    console.error('Fetch exception:',e);
+  }
+}
+
+function getFiltered(){
+  if(currentTeacher==='전체')return allData;
+  return allData.filter(d=>d.teacher===currentTeacher);
+}
+
+// ━━ Render ━━
+function showLoading(){
+  document.getElementById('statsContent').innerHTML=`
+    <div class="stats-grid">
+      <div class="skeleton skel-stat"></div>
+      <div class="skeleton skel-stat"></div>
+      <div class="skeleton skel-stat"></div>
+    </div>`;
+  document.getElementById('listContent').innerHTML=`
+    <div class="skeleton skel-card"></div>
+    <div class="skeleton skel-card"></div>
+    <div class="skeleton skel-card"></div>`;
+}
+
+function render(){
+  const filtered=getFiltered();
+  renderStats(filtered);
+  renderList(filtered);
+}
+
+function renderStats(data){
+  const total=data.length;
+  const dayCounts={};
+  DAY_SHORT.forEach(d=>dayCounts[d]=0);
+  data.forEach(entry=>{
+    const d=entry.day;
+    if(d in dayCounts)dayCounts[d]++;
+  });
+
+  let html=`
+    <div style="margin-bottom:12px">
+      <div class="stat-total fade-in">
+        <div class="stat-num">${total}</div>
+        <div class="stat-label">전체 신청</div>
+      </div>
+    </div>
+    <div class="day-stats fade-in">`;
+
+  DAY_SHORT.forEach(d=>{
+    html+=`
+      <div class="day-stat">
+        <div class="day-stat-num">${dayCounts[d]}</div>
+        <div class="day-stat-label">${d}</div>
+      </div>`;
+  });
+
+  html+=`</div>`;
+  document.getElementById('statsContent').innerHTML=html;
+}
+
+function renderList(data){
+  // Group by day
+  const groups={};
+  DAYS.forEach(d=>groups[d]=[]);
+
+  data.forEach(entry=>{
+    const dayFull=DAY_SHORT.indexOf(entry.day)>=0?DAYS[DAY_SHORT.indexOf(entry.day)]:null;
+    if(dayFull)groups[dayFull].push(entry);
+  });
+
+  let html='';
+  let hasAny=false;
+
+  DAYS.forEach(dayName=>{
+    const items=groups[dayName];
+    if(items.length===0)return;
+    hasAny=true;
+
+    html+=`
+    <div class="day-group fade-in">
+      <div class="day-header">
+        <h3>${dayName}</h3>
+        <span class="day-badge">${items.length}명</span>
+      </div>`;
+
+    items.forEach(s=>{
+      const initial=getInitial(s.name);
+      const time=s.created_at?formatTime(s.created_at):'';
+      html+=`
+      <div class="student-card">
+        <div class="student-avatar">${initial}</div>
+        <div class="student-info">
+          <div class="student-name">${esc(s.name||'')}</div>
+          <div class="student-meta">
+            <span>${esc(s.school||'')} ${esc(s.grade||'')}</span>
+            <span class="meta-tag">${esc(s.curriculum||'')}</span>
+            <span class="meta-tag">${esc(s.week||'')}</span>
+          </div>
+        </div>
+        <div class="student-time">${time}</div>
+      </div>`;
+    });
+
+    html+=`</div>`;
+  });
+
+  if(!hasAny){
+    html=`
+    <div class="empty-state fade-in">
+      <div class="icon">📋</div>
+      <p>아직 신청한 학생이 없습니다</p>
+    </div>`;
+  }
+
+  document.getElementById('listContent').innerHTML=html;
+}
+
+function esc(s){
+  const div=document.createElement('div');
+  div.textContent=s;
+  return div.innerHTML;
+}
+
+// ━━ Reset ━━
+async function resetWeek(){
+  if(!confirm('이번 주 데이터를 모두 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.'))return;
+  const monday=getMonday();
+  const {error}=await supabase.from('zoom_surveys').delete().gte('created_at',monday.toISOString());
+  if(error){alert('삭제 중 오류가 발생했습니다.');console.error(error);return;}
+  fetchData();
+}
+
+// ━━ Auto Refresh ━━
+function startAutoRefresh(){
+  if(refreshTimer)clearInterval(refreshTimer);
+  refreshTimer=setInterval(fetchData,30000);
+}
+
+// ━━ Init ━━
+fetchData();
+startAutoRefresh();
+
+// Dark mode: respect system preference
+if(window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches){
+  document.documentElement.setAttribute('data-theme','dark');
+}
+window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change',e=>{
+  document.documentElement.setAttribute('data-theme',e.matches?'dark':'light');
+});
+</script>
+</body>
+</html>
