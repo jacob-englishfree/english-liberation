@@ -1878,26 +1878,20 @@ function getThisWeekSurvey(){
 }
 async function fetchSurveyAvail(teacher){
   if(!supa)return;
-  // 이번 주 월요일 + 다음 주 월요일 둘 다 조회 (선생님이 어느 탭에서 저장했든 매칭)
+  // 이번 주 월요일 기준으로 조회
   const now=new Date();const dow=now.getDay();
   const thisMonDiff=now.getDate()-dow+(dow===0?-6:1);
   const thisMon=new Date(now.getFullYear(),now.getMonth(),thisMonDiff);
-  const daysUntil=(8-dow)%7||7;
-  const nextMon=new Date(now.getFullYear(),now.getMonth(),now.getDate()+daysUntil);
   const thisWeekStart=thisMon.toISOString().slice(0,10);
-  const nextWeekStart=nextMon.toISOString().slice(0,10);
   surveyAvail={unavailable:[],max:9,counts:{},loading:false};
   try{
     const[schedRes,countRes]=await Promise.all([
-      supa.from('teacher_schedule').select('*').eq('teacher',teacher).in('week_start',[thisWeekStart,nextWeekStart]),
+      supa.from('teacher_schedule').select('*').eq('teacher',teacher).eq('week_start',thisWeekStart).maybeSingle(),
       supa.from('zoom_surveys').select('day').eq('teacher',teacher).gte('created_at',thisMon.toISOString())
     ]);
-    // 다음 주 데이터 우선, 없으면 이번 주
-    const schedData=(schedRes.data||[]);
-    const found=schedData.find(d=>d.week_start===nextWeekStart)||schedData.find(d=>d.week_start===thisWeekStart);
-    if(found){
-      surveyAvail.unavailable=found.unavailable_days||[];
-      surveyAvail.max=found.max_per_day||9;
+    if(schedRes.data){
+      surveyAvail.unavailable=schedRes.data.unavailable_days||[];
+      surveyAvail.max=schedRes.data.max_per_day||9;
     }
     const counts={};
     (countRes.data||[]).forEach(r=>{
@@ -1978,15 +1972,17 @@ function rSurvey(){
   } else if(sv.step===3){
     const days=teacherDays[sv.teacher]||defaultDays;
     const dayIdx={월:0,화:1,수:2,목:3,금:4};
-    const now=new Date();const dow=now.getDay();const daysUntilMon=(8-dow)%7||7;
-    const nextMon=new Date(now.getFullYear(),now.getMonth(),now.getDate()+daysUntilMon);
+    const now=new Date();const dow=now.getDay();
+    const thisMonDiff=now.getDate()-dow+(dow===0?-6:1);
+    const thisMon=new Date(now.getFullYear(),now.getMonth(),thisMonDiff);
+    const todayDate=now.toISOString().slice(0,10);
     body=`
       <div style="padding:0 20px;margin-top:8px">
         <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">${esc(sv.teacher)} 테스트 응시가능시간</div>
         <div style="font-size:12px;color:var(--sub);margin-bottom:6px;line-height:1.6">*당일 응시가능인원은 선착순입니다.<br>*선착순에서 마감되며, 요일선택이 가능하다면 자리가 있는것입니다!</div>
         <div style="font-size:12px;color:var(--red);font-weight:600;margin-bottom:16px">본인이 선택한 시간에 반드시 응시해야합니다. 신중하게 선택해주세요.</div>
         <div>
-          ${days.map(d=>{const dt=new Date(nextMon);dt.setDate(dt.getDate()+dayIdx[d]);const dateStr=(dt.getMonth()+1)+'/'+dt.getDate();const label=`${d} ${dateStr} (저녁10시~12시)`;const av=surveyAvail||{unavailable:[],max:9,counts:{}};const isUnavail=av.unavailable.includes(d);const cnt=av.counts[d]||0;const maxD=av.max||9;const isFull=cnt>=maxD;const disabled=isUnavail||isFull;const badge=isUnavail?'<span style="font-size:11px;color:var(--red);font-weight:700;margin-left:auto">테스트 없음</span>':isFull?`<span style="font-size:11px;color:var(--red);font-weight:700;margin-left:auto">마감 (${maxD}/${maxD})</span>`:`<span style="font-size:11px;color:var(--green,#22c55e);font-weight:600;margin-left:auto">${maxD-cnt}/${maxD} 남음</span>`;return`<button class="opt${sv.day===label?' on':''}${disabled?' disabled':''}" ${disabled?'disabled':''}style="${disabled?'opacity:0.45;pointer-events:'+(disabled?'none':'auto')+';':''}" onclick="surveyState.day='${label}';R()"><div style="width:22px;height:22px;border-radius:50%;border:2px solid ${sv.day===label?'var(--blue)':'var(--g300)'};display:flex;align-items:center;justify-content:center;flex-shrink:0">${sv.day===label?'<div style="width:12px;height:12px;border-radius:50%;background:var(--blue)"></div>':''}</div><span style="font-size:15px;font-weight:${sv.day===label?'700':'500'};flex:1">${label}</span>${badge}</button>`;}).join('')}
+          ${days.map(d=>{const dt=new Date(thisMon);dt.setDate(dt.getDate()+dayIdx[d]);const dateStr=(dt.getMonth()+1)+'/'+dt.getDate();const dtDate=dt.toISOString().slice(0,10);const isPast=dtDate<todayDate;const label=`${d} ${dateStr} (저녁10시~12시)`;const av=surveyAvail||{unavailable:[],max:9,counts:{}};const isUnavail=av.unavailable.includes(d);const cnt=av.counts[d]||0;const maxD=av.max||9;const isFull=cnt>=maxD;const disabled=isUnavail||isFull||isPast;const badge=isPast?'<span style="font-size:11px;color:var(--hint);font-weight:700;margin-left:auto">지남</span>':isUnavail?'<span style="font-size:11px;color:var(--red);font-weight:700;margin-left:auto">테스트 없음</span>':isFull?`<span style="font-size:11px;color:var(--red);font-weight:700;margin-left:auto">마감 (${maxD}/${maxD})</span>`:`<span style="font-size:11px;color:var(--green,#22c55e);font-weight:600;margin-left:auto">${maxD-cnt}/${maxD} 남음</span>`;return`<button class="opt${sv.day===label?' on':''}${disabled?' disabled':''}" ${disabled?'disabled':''}style="${disabled?'opacity:0.45;pointer-events:'+(disabled?'none':'auto')+';':''}" onclick="surveyState.day='${label}';R()"><div style="width:22px;height:22px;border-radius:50%;border:2px solid ${sv.day===label?'var(--blue)':'var(--g300)'};display:flex;align-items:center;justify-content:center;flex-shrink:0">${sv.day===label?'<div style="width:12px;height:12px;border-radius:50%;background:var(--blue)"></div>':''}</div><span style="font-size:15px;font-weight:${sv.day===label?'700':'500'};flex:1">${label}</span>${badge}</button>`;}).join('')}
         </div>
       </div>`;
   } else if(sv.step===4){
