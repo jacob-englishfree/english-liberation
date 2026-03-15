@@ -1902,11 +1902,11 @@ async function fetchSurveyAvail(teacher){
 }
 function rSurvey(){
   const sv=surveyState;
-  const teacherWeeks={'곽주엽T':8,'양윤성T':14,'양현서T':14,'강제니T':14,'한민준T':14};
-  const teacherDays={'곽주엽T':['월','화','수','목']};
+  const teacherWeeks={'윤성T':14,'현서T':14,'민중T':14,'주원조교':14,'희수조교':14,'희선실장':14};
+  const teacherDays={};
   const defaultDays=['월','화','수','목','금'];
   const curriculums=['정규반(기출제로원)','내신의기술'];
-  const teachers=['양윤성T','양현서T','곽주엽T','강제니T','한민준T'];
+  const teachers=['윤성T','현서T','민중T','주원조교','희수조교','희선실장'];
 
   const canNext=(()=>{
     if(sv.step===1)return sv.curriculum&&sv.teacher;
@@ -1962,7 +1962,7 @@ function rSurvey(){
     body=`
       <div style="padding:0 20px;margin-top:8px">
         <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">주차별 테스트 선택 (${esc(sv.teacher)})</div>
-        <div style="font-size:12px;color:var(--sub);margin-bottom:16px">${sv.teacher==='곽주엽T'?'주엽T/세인T':esc(sv.teacher)} 1~${maxWeek}주차 중 선택</div>
+        <div style="font-size:12px;color:var(--sub);margin-bottom:16px">${esc(sv.teacher)} 1~${maxWeek}주차 중 선택</div>
         <div style="max-height:calc(100dvh - 260px);overflow-y:auto;-webkit-overflow-scrolling:touch">
           ${Array.from({length:maxWeek},(_,i)=>{const w=`${i+1}주차 테스트`;return`<button class="opt${sv.week===w?' on':''}" onclick="surveyState.week='${w}';R()"><div style="width:22px;height:22px;border-radius:50%;border:2px solid ${sv.week===w?'var(--blue)':'var(--g300)'};display:flex;align-items:center;justify-content:center;flex-shrink:0">${sv.week===w?'<div style="width:12px;height:12px;border-radius:50%;background:var(--blue)"></div>':''}</div><span style="font-size:15px;font-weight:${sv.week===w?'700':'500'}">${w}</span></button>`;}).join('')}
         </div>
