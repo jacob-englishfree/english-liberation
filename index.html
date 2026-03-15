@@ -1894,24 +1894,36 @@ function rSurvey(){
 
   let body='';
   if(sv.step===1){
-    const nameVal=esc(profile.name||'');
-    const schoolVal=esc((profile.grade||'')+'/'+(profile.school||''));
     body=`
       <div style="padding:0 20px;margin-top:8px">
-        <div style="margin-bottom:20px">
-          <label style="font-size:13px;font-weight:600;color:var(--sub);display:block;margin-bottom:6px">학생이름</label>
-          <input class="input" value="${nameVal}" readonly style="background:var(--g50);color:var(--sub)">
+        <div style="background:var(--blue-xl);border-radius:var(--r-md);padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;gap:8px">
+          <span style="font-size:16px">⚠️</span>
+          <span style="font-size:12px;font-weight:600;color:var(--blue)">정확한 본명(성 포함)과 학교명을 기재해주세요</span>
+        </div>
+        <div style="margin-bottom:16px">
+          <label style="font-size:13px;font-weight:600;color:var(--sub);display:block;margin-bottom:6px">이름 (성 포함 본명) <span style="color:var(--red)">*</span></label>
+          <input id="svName" class="input" value="${esc(profile.name||'')}" placeholder="예: 유환희">
+        </div>
+        <div style="margin-bottom:16px">
+          <label style="font-size:13px;font-weight:600;color:var(--sub);display:block;margin-bottom:6px">학교 <span style="color:var(--red)">*</span></label>
+          <input id="svSchool" class="input" value="${esc(profile.school||'')}" placeholder="예: 서울휘문고등학교">
         </div>
         <div style="margin-bottom:20px">
-          <label style="font-size:13px;font-weight:600;color:var(--sub);display:block;margin-bottom:6px">학교/학년</label>
-          <input class="input" value="${schoolVal}" readonly style="background:var(--g50);color:var(--sub)">
+          <label style="font-size:13px;font-weight:600;color:var(--sub);display:block;margin-bottom:6px">학년 <span style="color:var(--red)">*</span></label>
+          <select id="svGrade" class="input select">
+            <option value="">학년을 선택해주세요</option>
+            <option value="중3" ${profile.grade==='중3'?'selected':''}>중학교 3학년</option>
+            <option value="고1" ${profile.grade==='고1'?'selected':''}>고등학교 1학년</option>
+            <option value="고2" ${profile.grade==='고2'?'selected':''}>고등학교 2학년</option>
+            <option value="고3" ${profile.grade==='고3'?'selected':''}>고등학교 3학년</option>
+          </select>
         </div>
         <div style="margin-bottom:20px">
-          <label style="font-size:13px;font-weight:600;color:var(--sub);display:block;margin-bottom:6px">수강중인 정규커리큘럼</label>
+          <label style="font-size:13px;font-weight:600;color:var(--sub);display:block;margin-bottom:6px">수강중인 정규커리큘럼 <span style="color:var(--red)">*</span></label>
           <div class="chips">${curriculums.map(c=>`<button class="chip${sv.curriculum===c?' on':''}" onclick="surveyState.curriculum='${c}';R()">${esc(c)}</button>`).join('')}</div>
         </div>
         <div style="margin-bottom:20px">
-          <label style="font-size:13px;font-weight:600;color:var(--sub);display:block;margin-bottom:6px">담당 선생님</label>
+          <label style="font-size:13px;font-weight:600;color:var(--sub);display:block;margin-bottom:6px">담당 선생님 <span style="color:var(--red)">*</span></label>
           <div class="chips">${teachers.map(t=>`<button class="chip${sv.teacher===t?' on':''}" onclick="surveyState.teacher='${t}';surveyState.week='';surveyState.day='';R()">${esc(t)}</button>`).join('')}</div>
         </div>
         ${prev?`<div class="card" style="margin:0;background:var(--blue-xl);border:1.5px solid var(--blue);padding:14px 16px">
@@ -2018,7 +2030,17 @@ function rSurvey(){
 }
 function surveyStepNext(){
   const sv=surveyState;
-  if(sv.step===1){if(!sv.curriculum||!sv.teacher){toast('모든 항목을 선택해주세요');return;}sv.step=2;}
+  if(sv.step===1){
+    const svN=$('svName').value.trim();
+    const svS=$('svSchool').value.trim();
+    const svG=$('svGrade').value;
+    if(svN.length<3){toast('성 포함 본명을 정확히 입력해주세요');$('svName').focus();return;}
+    if(!svS){toast('학교를 입력해주세요');$('svSchool').focus();return;}
+    if(!svG){toast('학년을 선택해주세요');return;}
+    if(!sv.curriculum||!sv.teacher){toast('커리큘럼과 담당 선생님을 선택해주세요');return;}
+    sP({name:svN,school:svS,grade:svG});
+    sv.step=2;
+  }
   else if(sv.step===2){if(!sv.week){toast('주차를 선택해주세요');return;}sv.step=3;}
   else if(sv.step===3){
     if(!sv.day){toast('요일을 선택해주세요');return;}
