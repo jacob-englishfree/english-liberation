@@ -1175,28 +1175,68 @@ function checkStreak(){
 function getDailyState(){try{return JSON.parse(localStorage.getItem('el_daily'))||{date:null,completed:false,score:null};}catch(e){return{date:null,completed:false,score:null};}}
 function saveDailyState(s){try{localStorage.setItem('el_daily',JSON.stringify(s));}catch(e){}}
 function dailySeed(){const d=new Date().toISOString().slice(0,10);let h=0;for(let i=0;i<d.length;i++){h=((h<<5)-h)+d.charCodeAt(i);h|=0;}return Math.abs(h);}
-// Daily vocab word bank — core words from textbook passages
+// Daily vocab word bank — 300 수능 핵심 단어
 const DAILY_WORDS=[
-  {en:'impression',ko:'인상'},{ en:'perception',ko:'인식'},{ en:'assumption',ko:'추정, 가정'},
-  {en:'underestimate',ko:'과소평가하다'},{ en:'potential',ko:'잠재력'},{ en:'confident',ko:'확신하는'},
-  {en:'permanent',ko:'영구적인'},{ en:'absolute',ko:'절대적인'},{ en:'predictable',ko:'예측 가능한'},
-  {en:'consistent',ko:'일관된'},{ en:'categorization',ko:'분류'},{ en:'mismatch',ko:'불일치'},
-  {en:'optimistic',ko:'낙관적인'},{ en:'pessimistic',ko:'비관적인'},{ en:'estimation',ko:'평가, 추정'},
-  {en:'experiment',ko:'실험'},{ en:'participant',ko:'참가자'},{ en:'personality',ko:'성격'},
-  {en:'fraction',ko:'일부, 소량'},{ en:'recognize',ko:'인정하다, 알아보다'},
-  {en:'capable',ko:'능력 있는'},{ en:'compete',ko:'경쟁하다'},{ en:'disappointment',ko:'실망'},
-  {en:'opportunity',ko:'기회'},{ en:'persistence',ko:'끈기, 인내'},
-  {en:'contract',ko:'계약'},{ en:'enthusiasm',ko:'열정'},{ en:'dedicated',ko:'헌신적인'},
-  {en:'guidance',ko:'지도, 안내'},{ en:'counselor',ko:'상담가'},
-  {en:'inspire',ko:'영감을 주다'},{ en:'prevent',ko:'막다, 방지하다'},
-  {en:'attitude',ko:'태도'},{ en:'behavior',ko:'행동'},{ en:'weakness',ko:'약점'},
-  {en:'failure',ko:'실패'},{ en:'overcome',ko:'극복하다'},{ en:'achieve',ko:'달성하다'},
-  {en:'contribute',ko:'기여하다'},{ en:'maintain',ko:'유지하다'},
-  {en:'challenge',ko:'도전'},{ en:'struggle',ko:'고군분투'},{ en:'reluctant',ko:'꺼리는'},
-  {en:'enthusiastic',ko:'열정적인'},{ en:'doubtful',ko:'의심스러운'},
-  {en:'flexible',ko:'유연한'},{ en:'significant',ko:'중요한, 의미 있는'},
-  {en:'determine',ko:'결정하다'},{ en:'perspective',ko:'관점'},{ en:'essential',ko:'필수적인'},
-  {en:'remarkable',ko:'주목할 만한'}
+{en:'abandon',ko:'버리다, 포기하다'},{en:'absorb',ko:'흡수하다'},{en:'accomplish',ko:'성취하다'},{en:'acquire',ko:'획득하다'},{en:'adequate',ko:'충분한, 적절한'},
+{en:'admire',ko:'감탄하다, 존경하다'},{en:'advocate',ko:'옹호하다, 지지자'},{en:'afford',ko:'~할 여유가 되다'},{en:'agriculture',ko:'농업'},{en:'alleviate',ko:'완화하다'},
+{en:'ambiguous',ko:'모호한'},{en:'analyze',ko:'분석하다'},{en:'anticipate',ko:'예상하다'},{en:'apparent',ko:'명백한, 분명한'},{en:'appetite',ko:'식욕, 욕구'},
+{en:'approach',ko:'접근하다, 접근법'},{en:'approximate',ko:'대략적인'},{en:'arrange',ko:'배열하다, 준비하다'},{en:'assert',ko:'주장하다, 단언하다'},{en:'assign',ko:'할당하다, 배정하다'},
+{en:'associate',ko:'연관짓다, 동료'},{en:'assure',ko:'보장하다, 확신시키다'},{en:'attach',ko:'붙이다, 첨부하다'},{en:'attempt',ko:'시도하다'},{en:'authority',ko:'권위, 당국'},
+{en:'bare',ko:'벌거벗은, 드러내다'},{en:'bias',ko:'편견, 편향'},{en:'bless',ko:'축복하다'},{en:'blur',ko:'흐릿하게 하다'},{en:'boom',ko:'급성장, 호황'},
+{en:'breed',ko:'기르다, 번식시키다'},{en:'burden',ko:'짐, 부담'},{en:'capacity',ko:'용량, 능력'},{en:'cease',ko:'멈추다, 중단하다'},{en:'challenge',ko:'도전, 이의를 제기하다'},
+{en:'chronic',ko:'만성적인'},{en:'circumstance',ko:'상황, 환경'},{en:'cling',ko:'매달리다, 집착하다'},{en:'collapse',ko:'붕괴하다, 무너지다'},{en:'commit',ko:'저지르다, 전념하다'},
+{en:'compel',ko:'강요하다'},{en:'competent',ko:'유능한'},{en:'comply',ko:'따르다, 준수하다'},{en:'compromise',ko:'타협하다'},{en:'conceive',ko:'생각해내다, 임신하다'},
+{en:'concern',ko:'걱정, 관련되다'},{en:'concrete',ko:'구체적인, 콘크리트'},{en:'conduct',ko:'수행하다, 행동'},{en:'confine',ko:'가두다, 제한하다'},{en:'conflict',ko:'갈등, 충돌하다'},
+{en:'confront',ko:'맞서다, 직면하다'},{en:'consent',ko:'동의하다, 승낙'},{en:'conservation',ko:'보존, 보호'},{en:'consist',ko:'구성되다'},{en:'constitute',ko:'구성하다, ~이 되다'},
+{en:'consult',ko:'상담하다, 참고하다'},{en:'contain',ko:'포함하다, 담다'},{en:'contemplate',ko:'심사숙고하다'},{en:'content',ko:'내용, 만족하는'},{en:'continent',ko:'대륙'},
+{en:'contribute',ko:'기여하다, 공헌하다'},{en:'convenient',ko:'편리한'},{en:'convert',ko:'전환하다, 개종시키다'},{en:'convince',ko:'확신시키다, 설득하다'},{en:'cope',ko:'대처하다'},
+{en:'craft',ko:'기술, 정교하게 만들다'},{en:'criterion',ko:'기준, 표준'},{en:'crucial',ko:'결정적인, 중대한'},{en:'cure',ko:'치료하다, 치료법'},{en:'currency',ko:'통화, 화폐'},
+{en:'decade',ko:'10년'},{en:'dedicate',ko:'헌신하다, 바치다'},{en:'deficit',ko:'적자, 부족'},{en:'deliberate',ko:'의도적인, 신중한'},{en:'democracy',ko:'민주주의'},
+{en:'deny',ko:'부인하다, 거부하다'},{en:'deplete',ko:'고갈시키다'},{en:'deprive',ko:'빼앗다, 박탈하다'},{en:'designate',ko:'지정하다'},{en:'detect',ko:'감지하다, 발견하다'},
+{en:'device',ko:'장치, 기구'},{en:'dignity',ko:'존엄, 품위'},{en:'dimension',ko:'차원, 규모'},{en:'disaster',ko:'재난, 재해'},{en:'disclose',ko:'공개하다, 밝히다'},
+{en:'discriminate',ko:'차별하다, 구별하다'},{en:'disorder',ko:'무질서, 장애'},{en:'dispose',ko:'처리하다, 배치하다'},{en:'dissolve',ko:'녹이다, 해산하다'},{en:'distinguish',ko:'구별하다'},
+{en:'diverse',ko:'다양한'},{en:'domestic',ko:'국내의, 가정의'},{en:'donate',ko:'기부하다'},{en:'dramatic',ko:'극적인'},{en:'dweller',ko:'거주자'},
+{en:'elaborate',ko:'정교한, 상세히 설명하다'},{en:'eliminate',ko:'제거하다'},{en:'emerge',ko:'나타나다, 부상하다'},{en:'emotion',ko:'감정'},{en:'employ',ko:'고용하다, 사용하다'},
+{en:'encounter',ko:'마주치다, 조우'},{en:'endure',ko:'견디다, 지속되다'},{en:'engage',ko:'참여하다, 종사하다'},{en:'enormous',ko:'거대한, 막대한'},{en:'enterprise',ko:'기업, 사업'},
+{en:'entity',ko:'독립체, 존재'},{en:'equip',ko:'갖추다, 장비를 주다'},{en:'era',ko:'시대'},{en:'essential',ko:'필수적인, 본질적인'},{en:'evaluate',ko:'평가하다'},
+{en:'evolve',ko:'진화하다, 발전하다'},{en:'examine',ko:'조사하다, 검사하다'},{en:'excess',ko:'초과, 과잉'},{en:'execute',ko:'실행하다, 처형하다'},{en:'exert',ko:'행사하다, 발휘하다'},
+{en:'exhibit',ko:'전시하다, 보이다'},{en:'expedition',ko:'탐험, 원정'},{en:'expertise',ko:'전문 지식'},{en:'expose',ko:'노출시키다, 폭로하다'},{en:'extent',ko:'정도, 범위'},
+{en:'extreme',ko:'극단적인, 극도의'},{en:'faculty',ko:'능력, 학부'},{en:'feasible',ko:'실행 가능한'},{en:'federal',ko:'연방의'},{en:'fierce',ko:'사나운, 격렬한'},
+{en:'flaw',ko:'결함, 흠'},{en:'fluctuate',ko:'변동하다, 오르내리다'},{en:'forecast',ko:'예측하다, 예보'},{en:'foster',ko:'육성하다, 촉진하다'},{en:'fraction',ko:'일부, 분수'},
+{en:'fragment',ko:'조각, 파편'},{en:'frontier',ko:'국경, 개척지'},{en:'fundamental',ko:'근본적인, 기초의'},{en:'genuine',ko:'진짜의, 진정한'},{en:'gesture',ko:'몸짓, 제스처'},
+{en:'guarantee',ko:'보장하다, 보증'},{en:'harsh',ko:'가혹한, 거친'},{en:'hierarchy',ko:'계층, 서열'},{en:'hypothesis',ko:'가설'},{en:'identify',ko:'확인하다, 알아보다'},
+{en:'illustrate',ko:'설명하다, 예증하다'},{en:'immune',ko:'면역의, 영향받지 않는'},{en:'implement',ko:'시행하다, 도구'},{en:'impose',ko:'부과하다, 강요하다'},{en:'incentive',ko:'동기, 장려금'},
+{en:'incline',ko:'~하는 경향이 있다'},{en:'indicate',ko:'나타내다, 가리키다'},{en:'inevitable',ko:'불가피한'},{en:'inflation',ko:'인플레이션, 물가 상승'},{en:'infrastructure',ko:'기반 시설'},
+{en:'inhibit',ko:'억제하다, 방해하다'},{en:'initiative',ko:'주도권, 계획'},{en:'input',ko:'투입, 입력'},{en:'inspect',ko:'검사하다, 점검하다'},{en:'instance',ko:'사례, 경우'},
+{en:'instrument',ko:'도구, 악기'},{en:'intellect',ko:'지성, 지력'},{en:'intention',ko:'의도, 목적'},{en:'interfere',ko:'방해하다, 간섭하다'},{en:'intervene',ko:'개입하다, 중재하다'},
+{en:'intrinsic',ko:'본질적인, 고유의'},{en:'investigate',ko:'조사하다'},{en:'involve',ko:'포함하다, 관련시키다'},{en:'justify',ko:'정당화하다'},{en:'labor',ko:'노동, 수고'},
+{en:'launch',ko:'시작하다, 출시하다'},{en:'legislation',ko:'법률, 입법'},{en:'legitimate',ko:'합법적인, 정당한'},{en:'liberal',ko:'자유로운, 진보적인'},{en:'linger',ko:'남아있다, 오래 머무르다'},
+{en:'locate',ko:'위치시키다, 찾다'},{en:'luxury',ko:'사치, 호화'},{en:'maintain',ko:'유지하다, 주장하다'},{en:'manipulate',ko:'조작하다, 다루다'},{en:'margin',ko:'여백, 차이'},
+{en:'massive',ko:'거대한, 대규모의'},{en:'medieval',ko:'중세의'},{en:'mental',ko:'정신적인'},{en:'metaphor',ko:'은유, 비유'},{en:'minimize',ko:'최소화하다'},
+{en:'miracle',ko:'기적'},{en:'modify',ko:'수정하다, 변경하다'},{en:'moral',ko:'도덕적인, 교훈'},{en:'mutual',ko:'상호의, 서로의'},{en:'negotiate',ko:'협상하다'},
+{en:'nevertheless',ko:'그럼에도 불구하고'},{en:'norm',ko:'규범, 기준'},{en:'notion',ko:'개념, 생각'},{en:'numerous',ko:'수많은'},{en:'objective',ko:'객관적인, 목표'},
+{en:'obscure',ko:'불분명한, 모호한'},{en:'obstacle',ko:'장애물'},{en:'obvious',ko:'명백한'},{en:'odd',ko:'이상한, 홀수의'},{en:'ongoing',ko:'진행 중인'},
+{en:'optimal',ko:'최적의'},{en:'origin',ko:'기원, 출신'},{en:'outline',ko:'개요, 윤곽'},{en:'overall',ko:'전반적인'},{en:'overseas',ko:'해외의, 해외로'},
+{en:'paradox',ko:'역설, 모순'},{en:'participate',ko:'참여하다'},{en:'passive',ko:'수동적인'},{en:'persist',ko:'지속하다, 고집하다'},{en:'phenomenon',ko:'현상'},
+{en:'plausible',ko:'그럴듯한'},{en:'plunge',ko:'급락하다, 뛰어들다'},{en:'portion',ko:'부분, 1인분'},{en:'pose',ko:'제기하다, 자세를 취하다'},{en:'precede',ko:'~에 앞서다'},
+{en:'predict',ko:'예측하다'},{en:'prejudice',ko:'편견'},{en:'preserve',ko:'보존하다, 보호하다'},{en:'presume',ko:'추정하다, 가정하다'},{en:'primitive',ko:'원시적인'},
+{en:'prior',ko:'이전의, 우선하는'},{en:'probe',ko:'조사하다, 탐사'},{en:'profound',ko:'심오한, 깊은'},{en:'prominent',ko:'저명한, 두드러진'},{en:'prompt',ko:'즉각적인, 촉발하다'},
+{en:'proportion',ko:'비율, 균형'},{en:'prosper',ko:'번영하다'},{en:'provision',ko:'공급, 규정'},{en:'pursue',ko:'추구하다, 뒤쫓다'},{en:'radical',ko:'급진적인, 근본적인'},
+{en:'range',ko:'범위, 다양하다'},{en:'rational',ko:'합리적인, 이성적인'},{en:'realm',ko:'영역, 왕국'},{en:'recession',ko:'경기 침체'},{en:'reconcile',ko:'화해시키다, 조화시키다'},
+{en:'recruit',ko:'모집하다, 신입'},{en:'reform',ko:'개혁하다, 개선하다'},{en:'regime',ko:'정권, 체제'},{en:'reinforce',ko:'강화하다'},{en:'relevant',ko:'관련 있는, 적절한'},
+{en:'rely',ko:'의존하다, 믿다'},{en:'render',ko:'~하게 만들다'},{en:'reproduce',ko:'번식하다, 복제하다'},{en:'resemble',ko:'닮다'},{en:'resist',ko:'저항하다'},
+{en:'resource',ko:'자원'},{en:'restrain',ko:'억제하다, 제지하다'},{en:'retrieve',ko:'되찾다, 검색하다'},{en:'revenue',ko:'수입, 세입'},{en:'revise',ko:'수정하다, 개정하다'},
+{en:'rigid',ko:'엄격한, 딱딱한'},{en:'routine',ko:'일상, 정기적인'},{en:'sacrifice',ko:'희생하다, 제물'},{en:'scale',ko:'규모, 척도'},{en:'scatter',ko:'흩뿌리다'},
+{en:'scope',ko:'범위, 영역'},{en:'segment',ko:'부분, 구간'},{en:'sensation',ko:'감각, 센세이션'},{en:'settle',ko:'정착하다, 해결하다'},{en:'shift',ko:'이동하다, 변화'},
+{en:'significant',ko:'중요한, 상당한'},{en:'simultaneous',ko:'동시의'},{en:'sole',ko:'유일한, 단독의'},{en:'source',ko:'원천, 출처'},{en:'species',ko:'종(種)'},
+{en:'sphere',ko:'구(球), 영역'},{en:'stable',ko:'안정적인'},{en:'statistics',ko:'통계'},{en:'stem',ko:'줄기, 유래하다'},{en:'stimulate',ko:'자극하다'},
+{en:'strive',ko:'노력하다, 분투하다'},{en:'submit',ko:'제출하다, 복종하다'},{en:'subordinate',ko:'하위의, 부하'},{en:'substance',ko:'물질, 본질'},{en:'subtle',ko:'미묘한, 섬세한'},
+{en:'supplement',ko:'보충하다, 보충제'},{en:'surplus',ko:'잉여, 과잉'},{en:'survey',ko:'조사하다, 설문조사'},{en:'suspend',ko:'중단하다, 매달다'},{en:'symbol',ko:'상징'},
+{en:'tackle',ko:'다루다, 태클하다'},{en:'target',ko:'목표, 대상'},{en:'tendency',ko:'경향, 성향'},{en:'theme',ko:'주제'},{en:'thereby',ko:'그것에 의하여'},
+{en:'tolerate',ko:'참다, 용인하다'},{en:'tradition',ko:'전통'},{en:'transaction',ko:'거래'},{en:'transition',ko:'전환, 이행'},{en:'transparent',ko:'투명한'},
+{en:'trigger',ko:'촉발하다, 방아쇠'},{en:'ultimate',ko:'궁극적인, 최종의'},{en:'underlie',ko:'~의 기저에 있다'},{en:'undertake',ko:'착수하다, 떠맡다'},{en:'urge',ko:'촉구하다, 충동'},
+{en:'valid',ko:'유효한, 타당한'},{en:'venture',ko:'모험, 벤처사업'},{en:'verify',ko:'확인하다, 검증하다'},{en:'via',ko:'~을 통하여'},{en:'virtual',ko:'가상의, 사실상의'},
+{en:'visible',ko:'보이는, 가시적인'},{en:'vivid',ko:'생생한, 선명한'},{en:'voluntary',ko:'자발적인'},{en:'welfare',ko:'복지'},{en:'widespread',ko:'널리 퍼진'}
 ];
 function getDailyVocabQuestions(){
   const seed=dailySeed();const words=[...DAILY_WORDS].sort((a,b)=>((seed*31+DAILY_WORDS.indexOf(a)*17)%1000)-((seed*31+DAILY_WORDS.indexOf(b)*17)%1000));
@@ -1376,7 +1416,7 @@ function animateScore(target){
 }
 
 function setBottom(html){const b=$('bottomBar');if(!html){b.style.display='none';b.innerHTML='';return;}b.innerHTML=html;b.style.display='';}
-function R(){({login:rLogin,home:rHome,learn:rLearn,record:rRecord,my:rMy,select:rSel,settings:rSet,exam:rExam,result:rResult,speedquiz:rSpeedQuiz,flashcard:rFlashcard,runnergame:rRunnerGame,survey:rSurvey}[S.scr]||rLogin)();
+function R(){({login:rLogin,home:rHome,learn:rLearn,record:rRecord,my:rMy,select:rSel,settings:rSet,exam:rExam,result:rResult,speedquiz:rSpeedQuiz,flashcard:rFlashcard,runnergame:rRunnerGame,survey:rSurvey,zoomprep:rZoomPrep}[S.scr]||rLogin)();
   // Apply page transition direction
   const pg=app.querySelector('.page');if(pg&&S.dir){pg.classList.remove('slide-left','slide-right','tab-swap');if(S.dir==='back')pg.classList.add('slide-right');else if(S.dir==='fwd')pg.classList.add('slide-left');else if(S.dir==='tab')pg.classList.add('tab-swap');}S.dir='fwd';
   // Tab bar visibility
@@ -1587,7 +1627,9 @@ function getChecklist(){
   }catch(e){return {date:new Date().toISOString().slice(0,10),items:{lecture:false,vocab:false,homework:false,zoomtest:false}};}
 }
 function saveChecklist(d){try{localStorage.setItem('el_checklist',JSON.stringify(d));}catch(e){}}
-function toggleCheckItem(key){const d=getChecklist();d.items[key]=!d.items[key];saveChecklist(d);R();}
+function toggleCheckItem(key){const d=getChecklist();d.items[key]=!d.items[key];saveChecklist(d);checkAllChecklistDone(d);R();}
+function autoCheckVocab(){const d=getChecklist();if(!d.items.vocab){d.items.vocab=true;saveChecklist(d);checkAllChecklistDone(d);}}
+function checkAllChecklistDone(d){const allDone=Object.values(d.items).filter(Boolean).length===4;if(allDone&&!d.xpAwarded){d.xpAwarded=true;saveChecklist(d);addXP(20);toast('학습 올클리어! +20 XP');}}
 
 // ━━ Curriculum Stage ━━
 const CURRICULUM_STAGES=['프리패스 어법/구문','이미지 독해','제로 코드','일관적 코드','파이널 코드'];
@@ -1611,12 +1653,6 @@ function rHome(){setBottom(null);
   ];
   const clDone=Object.values(cl.items).filter(Boolean).length;
   const clPct=Math.round(clDone/4*100);
-  const curStage=getCurStage();
-  const warn=getWarnings();
-  const totalWarnings=warn.warnings+warn.yellows*2;
-  const warnColor=totalWarnings>=4?'var(--red)':totalWarnings>=2?'var(--yellow)':'var(--green)';
-  const warnBg=totalWarnings>=4?'var(--red-l)':totalWarnings>=2?'var(--yellow-l)':'var(--green-l)';
-  const warnLabel=totalWarnings>=4?'수강정지 위험':totalWarnings>=2?'주의 필요':'안전';
 
   app.innerHTML=`<div class="page">
     <!-- 1. Greeting Header -->
@@ -1673,28 +1709,7 @@ function rHome(){setBottom(null);
       ${clDone===4?'<div style="margin-top:12px;padding:8px 12px;background:var(--green-l);border-radius:var(--r-sm);text-align:center;font-size:12px;font-weight:600;color:var(--green)">오늘 학습을 모두 완료했어요! 🎉</div>':''}
     </div>
 
-    <!-- 5. Curriculum Stage -->
-    <div class="sec-label">내 커리큘럼</div>
-    <div class="card" style="padding:20px">
-      <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:16px">현재 단계</div>
-      <div style="display:flex;align-items:center;gap:0;margin-bottom:14px">
-        ${CURRICULUM_STAGES.map((st,i)=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center;position:relative">
-          <div style="width:${i===curStage?'28px':'20px'};height:${i===curStage?'28px':'20px'};border-radius:50%;background:${i<curStage?'var(--blue)':i===curStage?'var(--blue)':'var(--g200)'};display:flex;align-items:center;justify-content:center;border:${i===curStage?'3px solid var(--blue-l)':'none'};transition:all .2s var(--ease);position:relative;z-index:1">
-            ${i<curStage?'<span style="color:white;font-size:10px;font-weight:800">✓</span>':i===curStage?'<span style="color:white;font-size:10px;font-weight:800">'+(i+1)+'</span>':'<span style="color:var(--hint);font-size:9px;font-weight:700">'+(i+1)+'</span>'}
-          </div>
-          ${i<CURRICULUM_STAGES.length-1?'<div style="position:absolute;top:50%;left:50%;width:100%;height:2px;background:'+(i<curStage?'var(--blue)':'var(--g200)')+';transform:translateY(-50%);z-index:0"></div>':''}
-        </div>`).join('')}
-      </div>
-      <div style="background:${curStage>=0?'var(--blue-l)':'var(--g100)'};border-radius:var(--r-md);padding:12px 16px;display:flex;align-items:center;gap:10px">
-        <span style="font-size:20px">📚</span>
-        <div>
-          <div style="font-size:14px;font-weight:700;color:var(--blue)">${CURRICULUM_STAGES[curStage]}</div>
-          <div style="font-size:11px;color:var(--sub);margin-top:2px">마이페이지에서 단계를 변경할 수 있어요</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 6. Zoom Test Info -->
+    <!-- 5. Zoom Test Info -->
     <div class="sec-label">줌테스트 안내</div>
     <div class="card" style="padding:20px">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
@@ -1716,85 +1731,14 @@ function rHome(){setBottom(null);
       </div>
       <button onclick="window.open('https://zoom.us/j/89841032230?pwd=9999','_blank')" style="width:100%;padding:12px;border:none;background:var(--blue);color:white;border-radius:var(--r-md);font-size:14px;font-weight:700;cursor:pointer;transition:opacity .15s">줌 입장하기</button>
       <div style="margin-top:10px;font-size:11px;color:var(--hint);text-align:center">⚠️ 카메라 반드시 ON · 80점 이상 통과</div>
-      <button onclick="haptic('tap');surveyState={step:1,curriculum:'',teacher:'',week:'',day:''};S.scr='survey';S.dir='fwd';R()" style="width:100%;padding:12px;border:none;background:var(--blue-l);color:var(--blue);border-radius:var(--r-md);font-size:14px;font-weight:700;cursor:pointer;margin-top:8px;transition:opacity .15s">스케줄 신청</button>
-    </div>
-
-    <!-- 7. Warning Tracker -->
-    <div class="sec-label">경고 현황</div>
-    <div class="card" style="padding:16px 20px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-        <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:16px">🚨</span>
-          <span style="font-size:14px;font-weight:700;color:var(--text)">현재 상태</span>
-        </div>
-        <span style="font-size:11px;font-weight:700;color:${warnColor};background:${warnBg};padding:3px 10px;border-radius:8px">${warnLabel}</span>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button onclick="haptic('tap');surveyState={step:1,curriculum:'',teacher:'',week:'',day:''};S.scr='survey';S.dir='fwd';R()" style="flex:1;padding:12px;border:none;background:var(--blue-l);color:var(--blue);border-radius:var(--r-md);font-size:14px;font-weight:700;cursor:pointer;transition:opacity .15s">스케줄 신청</button>
+        <button onclick="haptic('tap');startZoomPrep()" style="flex:1;padding:12px;border:none;background:var(--purple-l);color:var(--purple);border-radius:var(--r-md);font-size:14px;font-weight:700;cursor:pointer;transition:opacity .15s">모의연습</button>
       </div>
-      <div style="display:flex;gap:6px;align-items:center">
-        <div style="flex:1;display:flex;gap:4px">
-          ${[0,1].map(i=>`<div style="flex:1;height:8px;border-radius:4px;background:${warn.warnings>i?'var(--yellow)':'var(--g100)'};transition:background .2s"></div>`).join('')}
-        </div>
-        <span style="font-size:11px;color:var(--sub);font-weight:600;min-width:28px;text-align:center">경고 ${warn.warnings}</span>
-        <div style="width:1px;height:16px;background:var(--divider)"></div>
-        <div style="flex:1;display:flex;gap:4px">
-          ${[0,1].map(i=>`<div style="flex:1;height:8px;border-radius:4px;background:${warn.yellows>i?(warn.yellows>=2?'var(--red)':'var(--yellow)'):'var(--g100)'};transition:background .2s"></div>`).join('')}
-        </div>
-        <span style="font-size:11px;color:var(--sub);font-weight:600;min-width:28px;text-align:center">옐로 ${warn.yellows}</span>
-      </div>
-      <div style="margin-top:10px;font-size:11px;color:var(--hint)">경고 2회 → 옐로카드 · 옐로 2회 → 레드카드(수강정지)</div>
     </div>
 
-    <!-- 8. Quick Links -->
-    <div class="sec-label">빠른 링크</div>
-    <div style="padding:0 20px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <button onclick="window.open('https://engeng.liveklass.com/','_blank')" style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--card);border-radius:var(--r-lg);border:none;cursor:pointer;box-shadow:var(--sh-sm);text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background='var(--card)'">
-        <div style="width:36px;height:36px;background:var(--blue-l);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🎓</div>
-        <div>
-          <div style="font-size:13px;font-weight:700;color:var(--text)">수강신청</div>
-          <div style="font-size:10px;color:var(--hint);margin-top:1px">LiveKlass</div>
-        </div>
-      </button>
-      <button onclick="window.open('http://pf.kakao.com/_xoxoGfG','_blank')" style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--card);border-radius:var(--r-lg);border:none;cursor:pointer;box-shadow:var(--sh-sm);text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background='var(--card)'">
-        <div style="width:36px;height:36px;background:var(--yellow-l);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">💬</div>
-        <div>
-          <div style="font-size:13px;font-weight:700;color:var(--text)">카카오톡</div>
-          <div style="font-size:10px;color:var(--hint);margin-top:1px">상담하기</div>
-        </div>
-      </button>
-      <button onclick="window.open('https://discord.gg/hBgphumrca','_blank')" style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--card);border-radius:var(--r-lg);border:none;cursor:pointer;box-shadow:var(--sh-sm);text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background='var(--card)'">
-        <div style="width:36px;height:36px;background:var(--purple-l);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🎮</div>
-        <div>
-          <div style="font-size:13px;font-weight:700;color:var(--text)">디스코드</div>
-          <div style="font-size:10px;color:var(--hint);margin-top:1px">커뮤니티</div>
-        </div>
-      </button>
-      <button onclick="window.open('https://cafe.naver.com/englishfree2','_blank')" style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--card);border-radius:var(--r-lg);border:none;cursor:pointer;box-shadow:var(--sh-sm);text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background='var(--card)'">
-        <div style="width:36px;height:36px;background:var(--green-l);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">☕</div>
-        <div>
-          <div style="font-size:13px;font-weight:700;color:var(--text)">네이버카페</div>
-          <div style="font-size:10px;color:var(--hint);margin-top:1px">공지·자료</div>
-        </div>
-      </button>
-    </div>
-
-    <!-- Admin: 정규 커리큘럼 테스트 -->
-    ${isAdmin()?`
-    <div class="sec-label">관리자</div>
-    <div class="card" style="padding:0;overflow:hidden">
-      <button onclick="goMode('교과서')" style="width:100%;padding:16px 20px;border:none;background:none;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background=''">
-        <div style="width:44px;height:44px;background:var(--purple-l);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">📚</div>
-        <div style="flex:1">
-          <div class="t-title">정규 커리큘럼 테스트</div>
-          <div class="t-caption c-sub" style="margin-top:2px">교과 · 출판사 · 과별 맞춤 시험</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:6px">
-          <span style="font-size:10px;font-weight:700;color:var(--red);background:var(--red-l);padding:3px 8px;border-radius:8px">관리자</span>
-          <span style="color:var(--hint);font-size:18px;font-weight:300">›</span>
-        </div>
-      </button>
-    </div>`:''}
-
-    <!-- 9. 내신핏 전환 배너 -->
-    <div class="card" style="padding:16px 20px;margin-top:${isAdmin()?'4px':'20px'};background:linear-gradient(135deg,#F59E0B 0%,#D97706 100%);border-radius:var(--r-lg);cursor:pointer" onclick="window.open('https://jacob-englishfree.github.io/naesinfit-tests/','_blank')">
+    <!-- 6. 내신핏 전환 배너 -->
+    <div class="card" style="padding:16px 20px;margin-top:20px;background:linear-gradient(135deg,#F59E0B 0%,#D97706 100%);border-radius:var(--r-lg);cursor:pointer" onclick="window.open('https://jacob-englishfree.github.io/naesinfit-tests/','_blank')">
       <div style="display:flex;align-items:center;gap:14px">
         <div style="font-size:28px">📝</div>
         <div style="flex:1">
@@ -1804,7 +1748,7 @@ function rHome(){setBottom(null);
       </div>
     </div>
 
-    <!-- 10. Footer -->
+    <!-- 7. Footer -->
     <div style="text-align:center;padding:24px 20px 12px;font-size:11px;color:var(--hint)">© 영어해방공식 · 온라인 영어학원</div>
     <div class="tab-spacer"></div>
   </div>`;
@@ -2045,6 +1989,19 @@ function rLearn(){setBottom(null);
       </button>
     </div>`:''}
 
+    <!-- Zoom Test Prep -->
+    <div class="sec-label">줌 테스트 대비</div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <button onclick="startZoomPrep()" style="width:100%;padding:16px 20px;border:none;background:none;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background=''">
+        <div style="width:44px;height:44px;background:var(--purple-l);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🎯</div>
+        <div style="flex:1">
+          <div style="font-size:15px;font-weight:700;color:var(--text)">줌 테스트 모의연습</div>
+          <div style="font-size:12px;color:var(--sub);margin-top:2px">실제와 동일한 20문제 · 80점 통과</div>
+        </div>
+        <span style="color:var(--purple);font-size:13px;font-weight:700">도전 →</span>
+      </button>
+    </div>
+
     <!-- Speed Quiz & Flashcard -->
     <div class="sec-label">더 많은 학습</div>
     <div class="card" style="padding:0;overflow:hidden">
@@ -2250,12 +2207,7 @@ function rMy(){setBottom(null);
           <div style="font-size:11px;color:var(--sub);margin-top:2px;font-weight:500">옐로카드</div>
         </div>
       </div>
-      <div style="font-size:11px;color:var(--sub);line-height:1.6;margin-bottom:14px">경고 2회 = 옐로카드 · 옐로카드 2회 = 레드카드(수강정지)<br>경고는 2주간 유효</div>
-      <div style="display:flex;gap:8px">
-        <button onclick="const w=getWarnings();w.warnings=Math.max(0,w.warnings-1);saveWarnings(w);R()" class="btn btn-ghost btn-sm" style="flex:1;height:36px;font-size:12px">경고 -1</button>
-        <button onclick="const w=getWarnings();w.warnings++;if(w.warnings>=2){w.warnings=0;w.yellows++;}saveWarnings(w);R()" class="btn btn-ghost btn-sm" style="flex:1;height:36px;font-size:12px;border-color:var(--yellow);color:var(--yellow)">경고 +1</button>
-        <button onclick="saveWarnings({warnings:0,yellows:0});R();toast('초기화됨')" class="btn btn-ghost btn-sm" style="flex:1;height:36px;font-size:12px;color:var(--sub)">초기화</button>
-      </div>
+      <div style="font-size:11px;color:var(--sub);line-height:1.6">경고 2회 = 옐로카드 · 옐로카드 2회 = 레드카드(수강정지)<br>경고는 2주간 유효</div>
     </div>`;})()}
 
     <!-- Settings List -->
@@ -2280,6 +2232,56 @@ function rMy(){setBottom(null);
       </button>
     </div>
 
+    <!-- 빠른 링크 -->
+    <div class="sec-label">빠른 링크</div>
+    <div style="padding:0 20px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button onclick="window.open('https://engeng.liveklass.com/','_blank')" style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--card);border-radius:var(--r-lg);border:none;cursor:pointer;box-shadow:var(--sh-sm);text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background='var(--card)'">
+        <div style="width:36px;height:36px;background:var(--blue-l);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🎓</div>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--text)">수강신청</div>
+          <div style="font-size:10px;color:var(--hint);margin-top:1px">LiveKlass</div>
+        </div>
+      </button>
+      <button onclick="window.open('http://pf.kakao.com/_xoxoGfG','_blank')" style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--card);border-radius:var(--r-lg);border:none;cursor:pointer;box-shadow:var(--sh-sm);text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background='var(--card)'">
+        <div style="width:36px;height:36px;background:var(--yellow-l);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">💬</div>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--text)">카카오톡</div>
+          <div style="font-size:10px;color:var(--hint);margin-top:1px">상담하기</div>
+        </div>
+      </button>
+      <button onclick="window.open('https://discord.gg/hBgphumrca','_blank')" style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--card);border-radius:var(--r-lg);border:none;cursor:pointer;box-shadow:var(--sh-sm);text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background='var(--card)'">
+        <div style="width:36px;height:36px;background:var(--purple-l);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🎮</div>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--text)">디스코드</div>
+          <div style="font-size:10px;color:var(--hint);margin-top:1px">커뮤니티</div>
+        </div>
+      </button>
+      <button onclick="window.open('https://cafe.naver.com/englishfree2','_blank')" style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--card);border-radius:var(--r-lg);border:none;cursor:pointer;box-shadow:var(--sh-sm);text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background='var(--card)'">
+        <div style="width:36px;height:36px;background:var(--green-l);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">☕</div>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--text)">네이버카페</div>
+          <div style="font-size:10px;color:var(--hint);margin-top:1px">공지·자료</div>
+        </div>
+      </button>
+    </div>
+
+    <!-- Admin: 정규 커리큘럼 테스트 -->
+    ${isAdmin()?`
+    <div class="sec-label">관리자</div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <button onclick="goMode('교과서')" style="width:100%;padding:16px 20px;border:none;background:none;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background=''">
+        <div style="width:44px;height:44px;background:var(--purple-l);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">📚</div>
+        <div style="flex:1">
+          <div class="t-title">정규 커리큘럼 테스트</div>
+          <div class="t-caption c-sub" style="margin-top:2px">교과 · 출판사 · 과별 맞춤 시험</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:10px;font-weight:700;color:var(--red);background:var(--red-l);padding:3px 8px;border-radius:8px">관리자</span>
+          <span style="color:var(--hint);font-size:18px;font-weight:300">›</span>
+        </div>
+      </button>
+    </div>`:''}
+
     <div style="text-align:center;padding:24px 20px 12px;font-size:11px;color:var(--hint)">© 영어해방공식 · 온라인 영어학원</div>
     <div class="tab-spacer"></div>
   </div>`;
@@ -2291,7 +2293,124 @@ function openP(){const p=profile;const d=document.createElement('div');d.classNa
 function doLogout(){const s=$('ps');if(s)s.remove();sP({name:'',school:'',grade:''});S.scr='login';R();toast('로그아웃했어요');}
 function viewHistory(idx){const h=gH();const r=h[idx];if(!r||!r.det)return;S.res={score:r.score,ok:r.ok,no:r.no,sk:r.sk||0,tP:r.tP||100,eP:r.eP||0,lv:LV(r.score),det:r.det,tM:r.tM||{}};S.tt=r.type||'테스트';S.te=0;S.fromHist=true;S.scr='result';R();}
 function goMode(m){S.mode=m;S.scr='select';S.sel=[];S.acc={};R();}
-function goHome(){if(S.ti)clearInterval(S.ti);Object.assign(S,{scr:'home',mode:null,sel:[],tt:null,qs:[],ans:{},res:null,rv:{}});S._isReview=false;S._isDaily=false;S._challengeScore=null;S._challengeName=null;S.tl=1200;S.dir='back';R();}
+function goHome(){if(S.ti)clearInterval(S.ti);Object.assign(S,{scr:'home',mode:null,sel:[],tt:null,qs:[],ans:{},res:null,rv:{}});S._isReview=false;S._isDaily=false;S._isZoomPrep=false;S._challengeScore=null;S._challengeName=null;S.tl=1200;S.dir='back';R();}
+
+// ━━ ZOOM TEST MOCK PRACTICE ━━
+function startZoomPrep(){S.scr='zoomprep';S.dir='fwd';R();}
+
+function rZoomPrep(){setBottom(null);
+  app.innerHTML=`<div class="page">
+    <div class="nav">
+      <button class="nav-back" onclick="goHome()">←</button>
+      <div class="nav-title">줌 테스트 모의연습</div>
+    </div>
+    <div style="text-align:center;padding:40px 20px 20px">
+      <div style="font-size:56px;margin-bottom:16px">🎯</div>
+      <div style="font-size:22px;font-weight:800;color:var(--text)">줌 테스트 모의연습</div>
+      <div style="font-size:14px;color:var(--sub);margin-top:8px;line-height:1.7">실제 줌 테스트와 동일한 구성<br>20문제 · 100점 만점 · 80점 통과</div>
+    </div>
+    <div class="card" style="padding:20px;margin-top:8px">
+      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:14px">시험 구성</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--g50);border-radius:var(--r-sm)">
+          <span style="font-size:16px">📝</span>
+          <div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text)">Q1-6: 어휘</div><div style="font-size:11px;color:var(--sub);margin-top:1px">영한/한영 단어 매칭</div></div>
+          <span style="font-size:12px;font-weight:700;color:var(--blue)">4점 x 6</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--g50);border-radius:var(--r-sm)">
+          <span style="font-size:16px">📖</span>
+          <div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text)">Q7-14: 구문/독해</div><div style="font-size:11px;color:var(--sub);margin-top:1px">문맥 속 단어, 동의어/반의어</div></div>
+          <span style="font-size:12px;font-weight:700;color:var(--blue)">5점 x 8</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--g50);border-radius:var(--r-sm)">
+          <span style="font-size:16px">🧠</span>
+          <div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text)">Q15-20: 종합</div><div style="font-size:11px;color:var(--sub);margin-top:1px">고난도 어휘 + 문맥 추론</div></div>
+          <span style="font-size:12px;font-weight:700;color:var(--blue)">6점 x 6</span>
+        </div>
+      </div>
+      <div style="margin-top:14px;padding:10px 14px;background:var(--blue-l);border-radius:var(--r-sm);font-size:12px;color:var(--blue);font-weight:600;text-align:center">총점: 24 + 40 + 36 = 100점 · 통과: 80점</div>
+    </div>
+    <div style="padding:20px">
+      <button onclick="launchZoomPrep()" class="btn btn-blue" style="width:100%;padding:16px;font-size:16px;font-weight:800">시작하기</button>
+    </div>
+    <div class="tab-spacer"></div>
+  </div>`;
+}
+
+function generateZoomPrepQuestions(){
+  const words=[...DAILY_WORDS];shuffle(words);
+  const qs=[];
+  let id=1;
+
+  // Helper: generate 4 wrong choices from DAILY_WORDS
+  function wrongChoices(correct,field,n){
+    const others=DAILY_WORDS.filter(x=>x.en!==correct.en);shuffle(others);
+    return others.slice(0,n).map(x=>x[field]);
+  }
+
+  // Q1-6: Simple en<->ko matching (4pts each)
+  for(let i=0;i<6;i++){
+    const w=words[i];
+    const isEnToKo=i%2===0;
+    const wrongs=wrongChoices(w,isEnToKo?'ko':'en',3);
+    const choices=isEnToKo?[w.ko,...wrongs]:[w.en,...wrongs];
+    shuffle(choices);
+    const ansIdx=choices.indexOf(isEnToKo?w.ko:w.en);
+    qs.push({
+      id:id++,type:'어휘',diff:'쉬움',pts:4,fmt:'mc',
+      stem:isEnToKo?'다음 영어 단어의 뜻으로 알맞은 것은?<br><div style="background:#f7f7f9;padding:10px 14px;border-radius:8px;margin:8px 0;font-size:18px;font-weight:700;text-align:center">'+w.en+'</div>':'다음 한국어 뜻에 해당하는 영어 단어는?<br><div style="background:#f7f7f9;padding:10px 14px;border-radius:8px;margin:8px 0;font-size:18px;font-weight:700;text-align:center">'+w.ko+'</div>',
+      ch:choices.map((c,ci)=>''+['①','②','③','④'][ci]+' '+c),ans:ansIdx,
+      det:{correct:'정답: '+(isEnToKo?w.ko:w.en)+' ('+w.en+' = '+w.ko+')',tip:'수능 필수 어휘를 반복 암기하세요.'}
+    });
+  }
+
+  // Q7-14: Fill in the blank / synonym-antonym (5pts each)
+  const contextTemplates=[
+    {t:'다음 빈칸에 들어갈 단어로 가장 적절한 것은?',gen:(w)=>'The government decided to _____ the new policy despite public opposition.<br><div style="background:#f7f7f9;padding:10px 14px;border-radius:8px;margin:8px 0;font-weight:600">빈칸에 "'+w.ko+'"의 의미를 가진 단어를 고르시오.</div>'},
+    {t:'다음 빈칸에 들어갈 단어로 가장 적절한 것은?',gen:(w)=>'Scientists have been trying to _____ the effects of climate change on marine ecosystems.<br><div style="background:#f7f7f9;padding:10px 14px;border-radius:8px;margin:8px 0;font-weight:600">빈칸에 "'+w.ko+'"의 의미를 가진 단어를 고르시오.</div>'},
+    {t:'다음 빈칸에 들어갈 단어로 가장 적절한 것은?',gen:(w)=>'It is important to _____ different perspectives before making a final decision.<br><div style="background:#f7f7f9;padding:10px 14px;border-radius:8px;margin:8px 0;font-weight:600">빈칸에 "'+w.ko+'"의 의미를 가진 단어를 고르시오.</div>'},
+    {t:'다음 단어와 가장 의미가 가까운 것은?',gen:(w)=>'<div style="background:#f7f7f9;padding:10px 14px;border-radius:8px;margin:8px 0;font-size:18px;font-weight:700;text-align:center">'+w.en+'</div><div style="font-size:13px;color:var(--sub);text-align:center;margin-bottom:4px">('+w.ko+')</div>위 단어와 가장 의미가 가까운 것을 고르시오.'},
+  ];
+  for(let i=0;i<8;i++){
+    const w=words[6+i];
+    const tmpl=contextTemplates[i%contextTemplates.length];
+    const wrongs=wrongChoices(w,'en',3);
+    const choices=[w.en,...wrongs];shuffle(choices);
+    const ansIdx=choices.indexOf(w.en);
+    qs.push({
+      id:id++,type:'구문독해',diff:'보통',pts:5,fmt:'mc',
+      stem:tmpl.gen(w),
+      ch:choices.map((c,ci)=>''+['①','②','③','④'][ci]+' '+c),ans:ansIdx,
+      det:{correct:'정답: '+w.en+' ('+w.ko+')',tip:'문맥 속에서 단어의 의미를 파악하는 연습을 하세요.'}
+    });
+  }
+
+  // Q15-20: Hardest — word meaning in context, choose best definition (6pts each)
+  for(let i=0;i<6;i++){
+    const w=words[14+i];
+    const wrongs=wrongChoices(w,'ko',3);
+    const choices=[w.ko,...wrongs];shuffle(choices);
+    const ansIdx=choices.indexOf(w.ko);
+    qs.push({
+      id:id++,type:'종합',diff:'어려움',pts:6,fmt:'mc',
+      stem:'다음 영어 단어의 뜻으로 가장 적절한 것을 고르시오.<br><div style="background:#f7f7f9;padding:10px 14px;border-radius:8px;margin:8px 0;font-size:18px;font-weight:700;text-align:center">'+w.en+'</div><div style="font-size:12px;color:var(--sub);text-align:center;margin-bottom:4px">다음 중 가장 정확한 뜻을 선택하시오.</div>',
+      ch:choices.map((c,ci)=>''+['①','②','③','④'][ci]+' '+c),ans:ansIdx,
+      det:{correct:'정답: '+w.ko+' ('+w.en+' = '+w.ko+')',tip:'수능 고난도 어휘는 정확한 의미 파악이 핵심입니다.'}
+    });
+  }
+
+  return qs;
+}
+
+function launchZoomPrep(){
+  S._isZoomPrep=true;
+  const qs=generateZoomPrepQuestions();
+  S.qs=qs;S.ans={};S.ci=0;S.scr='exam';S.tt='줌 테스트 모의연습';
+  S.ts=Date.now();S.te=0;S.tlf=1200;S.tl=1200;
+  if(S.ti)clearInterval(S.ti);
+  S.ti=setInterval(()=>{S.te=Math.floor((Date.now()-S.ts)/1000);S.tlf=Math.max(0,S.tl-S.te);const el=$('tmr');if(el){el.textContent=ft(S.tlf);el.className='timer-display'+(S.tlf<=60?' danger':S.tlf<=300?' warn':'');}if(S.tlf<=0){clearInterval(S.ti);doSub(true);}},1000);
+  R();
+}
 
 // ━━ Admin Login Sheet ━━
 function openAdminLogin(){
@@ -2665,7 +2784,7 @@ function doSub(auto){
   S.res={score,ok,no,sk,tP,eP,lv:LV(score),det,tM};S.scr='result';S.rv={};
   sH({date:new Date().toLocaleDateString('ko-KR'),score,ok,no,sk,tP,eP,time:ftk(S.te),type:S.tt,level:LV(score).i+' '+LV(score).n,det,tM});
   if(S._isReview){removeWrongs(det);S._isReview=false;}
-  else if(S._isDaily){saveDailyState({date:new Date().toISOString().slice(0,10),completed:true,score});S._isDaily=false;addWrongs(det);}
+  else if(S._isDaily){saveDailyState({date:new Date().toISOString().slice(0,10),completed:true,score});S._isDaily=false;addWrongs(det);autoCheckVocab();}
   else{addWrongs(det);}
   updateStreak();
   // XP, Type Analysis, Badges
