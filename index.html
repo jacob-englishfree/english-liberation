@@ -2084,6 +2084,7 @@ function surveyStepNext(){
   else if(sv.step===2){if(!sv.week){toast('주차를 선택해주세요');return;}sv.step=3;fetchSurveyAvail(sv.teacher);}
   else if(sv.step===3){
     if(!sv.day){toast('요일을 선택해주세요');return;}
+    if(!confirm(`아래 내용으로 제출합니다.\n\n이름: ${sv.name}\n커리큘럼: ${sv.curriculum}\n담당: ${sv.teacher}\n주차: ${sv.week}\n시간: ${sv.day}\n\n제출하시겠습니까?`))return;
     // Save to localStorage
     saveSurveyEntry({
       name:sv.name,
