@@ -220,8 +220,10 @@ button{font-family:inherit;cursor:pointer}
   <div class="section">
     <div class="toggle-wrap">
       <button class="toggle-btn on" id="toggleWeek" onclick="setPeriod('week')">이번 주</button>
+      <button class="toggle-btn" id="toggleLastWeek" onclick="setPeriod('lastweek')">지난 주</button>
       <button class="toggle-btn" id="toggleAll" onclick="setPeriod('all')">전체</button>
     </div>
+    <div id="weekRangeLabel" style="text-align:center;font-size:12px;font-weight:600;color:var(--blue);margin-top:8px"></div>
   </div>
 
   <!-- Toolbar -->
@@ -267,13 +269,19 @@ let allData=[];
 let refreshTimer=null;
 
 // ━━ Helpers ━━
-function getMonday(){
+function getMonday(offsetWeeks=0){
   const now=new Date();
   const day=now.getDay();
-  const diff=now.getDate()-day+(day===0?-6:1);
+  const diff=now.getDate()-day+(day===0?-6:1)+(offsetWeeks*7);
   const mon=new Date(now.getFullYear(),now.getMonth(),diff);
   mon.setHours(0,0,0,0);
   return mon;
+}
+function getWeekRangeLabel(offsetWeeks=0){
+  const dayNames=['일','월','화','수','목','금','토'];
+  const mon=getMonday(offsetWeeks);
+  const fri=new Date(mon);fri.setDate(fri.getDate()+4);
+  return `${mon.getMonth()+1}/${mon.getDate()}(${dayNames[mon.getDay()]}) ~ ${fri.getMonth()+1}/${fri.getDate()}(${dayNames[fri.getDay()]})`;
 }
 
 function formatTime(iso){
@@ -302,7 +310,12 @@ function setTeacher(t){
 function setPeriod(p){
   currentPeriod=p;
   document.getElementById('toggleWeek').classList.toggle('on',p==='week');
+  document.getElementById('toggleLastWeek').classList.toggle('on',p==='lastweek');
   document.getElementById('toggleAll').classList.toggle('on',p==='all');
+  const label=document.getElementById('weekRangeLabel');
+  if(p==='week')label.textContent='이번 주: '+getWeekRangeLabel(0);
+  else if(p==='lastweek')label.textContent='지난 주: '+getWeekRangeLabel(-1);
+  else label.textContent='';
   fetchData();
 }
 
@@ -313,8 +326,12 @@ async function fetchData(){
     let query=supabase.from('zoom_surveys').select('*').order('created_at',{ascending:false});
 
     if(currentPeriod==='week'){
-      const monday=getMonday();
+      const monday=getMonday(0);
       query=query.gte('created_at',monday.toISOString());
+    } else if(currentPeriod==='lastweek'){
+      const lastMon=getMonday(-1);
+      const thisMon=getMonday(0);
+      query=query.gte('created_at',lastMon.toISOString()).lt('created_at',thisMon.toISOString());
     }
 
     const {data,error}=await query;
@@ -462,6 +479,7 @@ function startAutoRefresh(){
 }
 
 // ━━ Init ━━
+document.getElementById('weekRangeLabel').textContent='이번 주: '+getWeekRangeLabel(0);
 fetchData();
 startAutoRefresh();
 

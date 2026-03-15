@@ -1654,7 +1654,7 @@ function rHome(){setBottom(null);
     </div>`;})()}
 
     <!-- 4. Daily Checklist -->
-    <div class="sec-label">이번 주 학습 현황</div>
+    <div class="sec-label">이번 주 학습 현황 (${getWeekRange()})</div>
     <div class="card" style="padding:20px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
         <div style="font-size:15px;font-weight:700;color:var(--text)">오늘의 학습 체크</div>
@@ -1811,6 +1811,13 @@ function rHome(){setBottom(null);
 }
 
 // ━━ SURVEY (줌 테스트 스케줄 설문) ━━
+function getWeekRange(){
+  const now=new Date();const day=now.getDay();const diff=now.getDate()-day+(day===0?-6:1);
+  const mon=new Date(now.getFullYear(),now.getMonth(),diff);mon.setHours(0,0,0,0);
+  const fri=new Date(mon);fri.setDate(fri.getDate()+4);
+  const dayNames=['일','월','화','수','목','금','토'];
+  return `${mon.getMonth()+1}/${mon.getDate()}(${dayNames[mon.getDay()]}) ~ ${fri.getMonth()+1}/${fri.getDate()}(${dayNames[fri.getDay()]})`;
+}
 function getSurveyHistory(){try{return JSON.parse(localStorage.getItem('el_survey_history'))||[];}catch(e){return[];}}
 function saveSurveyEntry(entry){
   const h=getSurveyHistory();h.push(entry);
@@ -1876,7 +1883,7 @@ function rSurvey(){
           <div class="chips">${teachers.map(t=>`<button class="chip${sv.teacher===t?' on':''}" onclick="surveyState.teacher='${t}';surveyState.week='';surveyState.day='';R()">${esc(t)}</button>`).join('')}</div>
         </div>
         ${prev?`<div class="card" style="margin:0;background:var(--blue-xl);border:1.5px solid var(--blue);padding:14px 16px">
-          <div style="font-size:12px;font-weight:700;color:var(--blue);margin-bottom:6px">이번 주 제출 내역</div>
+          <div style="font-size:12px;font-weight:700;color:var(--blue);margin-bottom:6px">이번 주 제출 내역 (${getWeekRange()})</div>
           <div style="font-size:13px;color:var(--text);line-height:1.7">
             ${esc(prev.curriculum)} · ${esc(prev.teacher)}<br>
             ${esc(prev.week)} · ${esc(prev.day)} (저녁10시~12시)
@@ -1963,6 +1970,7 @@ function rSurvey(){
     <div class="nav">
       <button class="nav-back" onclick="${sv.step>1&&sv.step<4?`surveyState.step--;R()`:`S.scr='home';S.dir='back';R()`}">←</button>
       <div class="nav-title">줌 테스트 스케줄 설문</div>
+    <div style="text-align:center;font-size:12px;font-weight:600;color:var(--blue);padding:4px 0">이번 주 ${getWeekRange()}</div>
     </div>
     <!-- Step indicator -->
     <div style="display:flex;gap:4px;padding:0 20px;margin-bottom:16px">
