@@ -442,7 +442,7 @@ input,select{font-family:inherit}
 <script>
 const SUPABASE_URL='https://awtqtubyymjtkhrigqhw.supabase.co';
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF3dHF0dWJ5eW1qdGtocmlncWh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMTUxNjIsImV4cCI6MjA4ODY5MTE2Mn0.HgxHj2MDLJpxEEN4hNdNOy5zBCWlHD37BPQjmEdsWa0';
-const supabase=window.supabase?window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY):null;
+const supa=window.supabase?window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY):null;
 
 const FALLBACK_FULL_PASSAGE=`Be Proud of Who You Are
 Laura Thompson
@@ -1810,8 +1810,8 @@ function saveSurveyEntry(entry){
   const h=getSurveyHistory();h.push(entry);
   try{localStorage.setItem('el_survey_history',JSON.stringify(h.slice(-50)));}catch(e){}
   // Save to Supabase
-  if(supabase){
-    supabase.from('zoom_surveys').insert({
+  if(supa){
+    supa.from('zoom_surveys').insert({
       name:entry.name,
       school:entry.school,
       grade:entry.grade,
