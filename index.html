@@ -1772,15 +1772,30 @@ function rHome(){setBottom(null);
         <span style="color:var(--hint);font-size:18px;font-weight:300">›</span>
       </button>
       <div style="height:1px;background:var(--divider);margin:0 20px"></div>
-      <button onclick="haptic('tap');surveyState={step:1,curriculum:'',teacher:'',week:'',day:''};S.scr='survey';S.dir='fwd';R()" style="width:100%;padding:16px 20px;border:none;background:none;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background=''">
-        <div style="width:44px;height:44px;background:var(--purple-l);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">📋</div>
-        <div style="flex:1">
-          <div style="font-size:15px;font-weight:700;color:var(--text)">스케줄 신청</div>
-          <div style="font-size:12px;color:var(--sub);margin-top:2px">이번 주 줌테스트 요일 선택</div>
-        </div>
-        <span style="color:var(--hint);font-size:18px;font-weight:300">›</span>
-      </button>
+      ${(()=>{
+        const submitted=getThisWeekSurvey();
+        const now=new Date();const isSunAfter10=now.getDay()===0&&now.getHours()>=22;
+        const isOpen=now.getDay()===0?now.getHours()>=22:now.getDay()>=1;
+        return `<button onclick="haptic('tap');surveyState={step:1,curriculum:'',teacher:'',week:'',day:''};S.scr='survey';S.dir='fwd';R()" style="width:100%;padding:16px 20px;border:none;background:none;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background=''">
+          <div style="width:44px;height:44px;background:${submitted?'var(--green-l)':isSunAfter10?'var(--red-l)':'var(--purple-l)'};border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${submitted?'✅':'📋'}</div>
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-size:15px;font-weight:700;color:var(--text)">줌테스트 스케줄 신청하기</span>
+              ${!submitted&&isOpen?'<span style="width:8px;height:8px;border-radius:50%;background:var(--red);flex-shrink:0"></span>':''}
+            </div>
+            ${submitted
+              ?'<div style="font-size:12px;color:var(--green);margin-top:2px;font-weight:600">신청 완료 · '+esc(submitted.day)+'</div>'
+              :'<div style="font-size:12px;color:var(--sub);margin-top:2px">매주 일요일 22시 오픈 · <span style="color:var(--red);font-weight:600">선착순 마감</span></div>'}
+          </div>
+          <span style="color:var(--hint);font-size:18px;font-weight:300">›</span>
+        </button>`;
+      })()}
     </div>
+    ${(()=>{
+      const now=new Date();const isSunAfter10=now.getDay()===0&&now.getHours()>=22;
+      const submitted=getThisWeekSurvey();
+      return (isSunAfter10&&!submitted)?'<div style="margin:8px 20px 0;padding:12px 16px;background:var(--red-l);border-radius:var(--r-md);display:flex;align-items:center;gap:10px"><span style="font-size:18px">🚨</span><div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--red)">스케줄 신청이 오픈되었습니다!</div><div style="font-size:11px;color:var(--sub);margin-top:2px">원하는 요일에 테스트보려면 빠르게 신청하세요</div></div></div>':'';
+    })()}
 
     <!-- 6. 빠른 링크 -->
     <div class="sec-label">우리 학원</div>
@@ -1986,7 +2001,7 @@ function rSurvey(){
   app.innerHTML=`<div class="page">
     <div class="nav">
       <button class="nav-back" onclick="${sv.step>1&&sv.step<4?`surveyState.step--;R()`:`S.scr='home';S.dir='back';R()`}">←</button>
-      <div class="nav-title">줌 테스트 스케줄 설문</div>
+      <div class="nav-title">줌테스트 스케줄 신청</div>
     <div style="text-align:center;font-size:12px;font-weight:600;color:var(--blue);padding:4px 0">이번 주 ${getWeekRange()}</div>
     </div>
     <!-- Step indicator -->
