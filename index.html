@@ -1637,7 +1637,7 @@ function checkAllChecklistDone(d){const allDone=Object.values(d.items).filter(Bo
 const CURRICULUM_STAGES=['프리패스 어법/구문','이미지 독해','제로 코드','일관적 코드','파이널 코드'];
 function getCurStage(){return parseInt(localStorage.getItem('el_curstage')||'0');}
 function setCurStage(i){localStorage.setItem('el_curstage',String(i));}
-// 상시 정규반 & 특별강의
+// 정규반 & 특별강의
 function getExtraCur(){try{return JSON.parse(localStorage.getItem('el_extracur'))||{gichul:false,words:false,naesin:false};}catch(e){return{gichul:false,words:false,naesin:false};}}
 function toggleExtraCur(key){const d=getExtraCur();d[key]=!d[key];localStorage.setItem('el_extracur',JSON.stringify(d));R();}
 
@@ -1913,7 +1913,7 @@ function rSurvey(){
   const teacherDays={};
   const defaultDays=['월','화','수','목','금'];
   const mainCur=['프리패스 어법/구문','이미지 독해','제로 코드','일관적 코드','파이널 코드'];
-  const regularCur=['기출제로원'];
+  const regularCur=['정규반(기출제로원)'];
   const specialCur=['써먹는단어','내신의기술'];
   const teachers=['윤성T','현서T','민중T','주원조교','희수조교','희선실장'];
 
@@ -1953,7 +1953,7 @@ function rSurvey(){
           <label style="font-size:13px;font-weight:600;color:var(--sub);display:block;margin-bottom:6px">수강중인 커리큘럼 <span style="color:var(--red)">*</span></label>
           <div style="font-size:11px;font-weight:600;color:var(--hint);margin-bottom:4px">메인 커리큘럼</div>
           <div class="chips" style="margin-bottom:10px">${mainCur.map(c=>`<button class="chip chip-sm${sv.curriculum===c?' on':''}" onclick="saveSurveyInputs();surveyState.curriculum='${c}';R()">${esc(c)}</button>`).join('')}</div>
-          <div style="font-size:11px;font-weight:600;color:var(--hint);margin-bottom:4px">상시 정규반</div>
+          <div style="font-size:11px;font-weight:600;color:var(--hint);margin-bottom:4px">정규반</div>
           <div class="chips" style="margin-bottom:10px">${regularCur.map(c=>`<button class="chip chip-sm${sv.curriculum===c?' on':''}" onclick="saveSurveyInputs();surveyState.curriculum='${c}';R()">${esc(c)}</button>`).join('')}</div>
           <div style="font-size:11px;font-weight:600;color:var(--hint);margin-bottom:4px">특별강의</div>
           <div class="chips">${specialCur.map(c=>`<button class="chip chip-sm${sv.curriculum===c?' on':''}" onclick="saveSurveyInputs();surveyState.curriculum='${c}';R()">${esc(c)}</button>`).join('')}</div>
@@ -2353,11 +2353,11 @@ function rMy(){setBottom(null);
         </button>`;}).join('')}
       </div>
       ${(()=>{const ex=getExtraCur();return `
-      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:10px">상시 정규반</div>
+      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:10px">정규반</div>
       <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:20px">
         <button onclick="toggleExtraCur('gichul')" style="width:100%;padding:10px 14px;border:1.5px solid ${ex.gichul?'var(--blue)':'var(--border)'};border-radius:var(--r-sm);background:${ex.gichul?'var(--blue-l)':'var(--white)'};display:flex;align-items:center;gap:10px;cursor:pointer;transition:all .15s">
           <div style="width:24px;height:24px;border-radius:var(--r-sm);border:2px solid ${ex.gichul?'var(--blue)':'var(--g300)'};background:${ex.gichul?'var(--blue)':'var(--white)'};display:flex;align-items:center;justify-content:center;font-size:12px;color:white;font-weight:700;flex-shrink:0">${ex.gichul?'✓':''}</div>
-          <span style="font-size:13px;font-weight:${ex.gichul?'700':'500'};color:${ex.gichul?'var(--blue)':'var(--text)'}">기출제로원</span>
+          <span style="font-size:13px;font-weight:${ex.gichul?'700':'500'};color:${ex.gichul?'var(--blue)':'var(--text)'}">정규반(기출제로원)</span>
         </button>
       </div>
       <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:10px">특별강의</div>
