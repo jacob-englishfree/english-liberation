@@ -1634,7 +1634,7 @@ function autoCheckVocab(){const d=getChecklist();if(!d.items.vocab){d.items.voca
 function checkAllChecklistDone(d){const allDone=Object.values(d.items).filter(Boolean).length===4;if(allDone&&!d.xpAwarded){d.xpAwarded=true;saveChecklist(d);addXP(20);toast('학습 올클리어! +20 XP');}}
 
 // ━━ Curriculum Stage ━━
-const CURRICULUM_STAGES=['프리패스 어법/구문','이미지 독해','제로 코드','일관적 코드','파이널 코드'];
+const CURRICULUM_STAGES=['프리패스구문','이미지독해','제로코드','일관적코드','파이널코드'];
 function getCurStage(){return parseInt(localStorage.getItem('el_curstage')||'0');}
 function setCurStage(i){localStorage.setItem('el_curstage',String(i));}
 // 정규반 & 특별강의
@@ -1912,8 +1912,8 @@ function rSurvey(){
   const teacherWeeks={'윤성T':14,'현서T':14,'민중T':14,'주원조교':14,'희수조교':14,'희선실장':14};
   const teacherDays={};
   const defaultDays=['월','화','수','목','금'];
-  const mainCur=['프리패스 어법/구문','이미지 독해','제로 코드','일관적 코드','파이널 코드'];
-  const regularCur=['정규반(기출제로원)'];
+  const mainCur=['프리패스구문','이미지독해','제로코드','일관적코드','파이널코드'];
+  const regularCur=['정규반'];
   const specialCur=['써먹는단어','내신의기술'];
   const teachers=['윤성T','현서T','민중T','주원조교','희수조교','희선실장'];
 
@@ -2357,7 +2357,7 @@ function rMy(){setBottom(null);
       <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:20px">
         <button onclick="toggleExtraCur('gichul')" style="width:100%;padding:10px 14px;border:1.5px solid ${ex.gichul?'var(--blue)':'var(--border)'};border-radius:var(--r-sm);background:${ex.gichul?'var(--blue-l)':'var(--white)'};display:flex;align-items:center;gap:10px;cursor:pointer;transition:all .15s">
           <div style="width:24px;height:24px;border-radius:var(--r-sm);border:2px solid ${ex.gichul?'var(--blue)':'var(--g300)'};background:${ex.gichul?'var(--blue)':'var(--white)'};display:flex;align-items:center;justify-content:center;font-size:12px;color:white;font-weight:700;flex-shrink:0">${ex.gichul?'✓':''}</div>
-          <span style="font-size:13px;font-weight:${ex.gichul?'700':'500'};color:${ex.gichul?'var(--blue)':'var(--text)'}">정규반(기출제로원)</span>
+          <span style="font-size:13px;font-weight:${ex.gichul?'700':'500'};color:${ex.gichul?'var(--blue)':'var(--text)'}">정규반</span>
         </button>
       </div>
       <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:10px">특별강의</div>
