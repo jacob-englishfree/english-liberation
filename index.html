@@ -425,6 +425,45 @@ input,select{font-family:inherit}
 
 /* Responsive */
 @media(max-width:380px){.act-grid{flex-wrap:wrap}.info-grid{grid-template-columns:1fr}.score-num{font-size:56px}}
+
+/* ━━ Score Trend Chart ━━ */
+.trend-chart{position:relative;background:var(--card);border-radius:var(--r-lg);margin:0 20px 10px;padding:20px;box-shadow:var(--sh-sm)}
+.trend-svg{width:100%;overflow:visible}
+.trend-line{fill:none;stroke:var(--blue);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.trend-area{fill:url(#trendGrad);opacity:.15}
+.trend-dot{fill:var(--blue);stroke:var(--card);stroke-width:2}
+.trend-dot.best{fill:var(--green);stroke:var(--card)}
+.trend-label{font-size:10px;fill:var(--hint);font-weight:500;font-family:'Noto Sans KR',sans-serif}
+.trend-score-label{font-size:11px;fill:var(--text);font-weight:700;font-family:'Noto Sans KR',sans-serif}
+.trend-grid{stroke:var(--g100);stroke-width:1}
+[data-theme="dark"] .trend-area{opacity:.1}
+
+/* ━━ Instagram Share Card ━━ */
+.share-card-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;border:none;border-radius:var(--r-md);font-size:14px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#833AB4,#FD1D1D,#F77737);color:white;transition:transform .15s var(--ease-out);margin-top:12px}
+.share-card-btn:active{transform:scale(.97)}
+/* ━━ Attendance Calendar ━━ */
+.attend-cal{background:var(--card);border-radius:var(--r-lg);margin:0 20px 10px;padding:20px;box-shadow:var(--sh-sm)}
+.attend-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.attend-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.attend-day-label{font-size:10px;font-weight:600;color:var(--hint);text-align:center;padding:2px 0}
+.attend-cell{aspect-ratio:1;border-radius:3px;position:relative}
+.attend-cell.lv0{background:var(--g100)}
+.attend-cell.lv1{background:rgba(49,130,246,.2)}
+.attend-cell.lv2{background:rgba(49,130,246,.4)}
+.attend-cell.lv3{background:rgba(49,130,246,.65)}
+.attend-cell.lv4{background:var(--blue)}
+.attend-cell.today{outline:2px solid var(--blue);outline-offset:-1px;border-radius:4px}
+.attend-cell.future{background:transparent}
+.attend-legend{display:flex;align-items:center;gap:4px;justify-content:flex-end;margin-top:10px}
+.attend-legend span{font-size:10px;color:var(--hint);font-weight:500}
+.attend-legend-box{width:12px;height:12px;border-radius:2px}
+.attend-stats{display:flex;gap:8px;margin-top:14px}
+.attend-stat{flex:1;text-align:center;padding:10px 0;background:var(--g50);border-radius:var(--r-sm)}
+.attend-stat-num{font-size:18px;font-weight:800;color:var(--blue)}
+.attend-stat-label{font-size:10px;color:var(--sub);margin-top:2px;font-weight:600}
+[data-theme="dark"] .attend-cell.lv1{background:rgba(49,130,246,.15)}
+[data-theme="dark"] .attend-cell.lv2{background:rgba(49,130,246,.3)}
+[data-theme="dark"] .attend-cell.lv3{background:rgba(49,130,246,.5)}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1156,6 +1195,7 @@ function removeWrongs(solvedQuestions){const w=getWrong();const remaining=w.filt
 function getStreak(){try{return JSON.parse(localStorage.getItem('el_streak'))||{count:0,lastDate:null};}catch(e){return{count:0,lastDate:null};}}
 function updateStreak(){
   const s=getStreak();const today=new Date().toISOString().slice(0,10);
+  markAttend();
   if(s.lastDate===today)return s;
   const yesterday=new Date(Date.now()-86400000).toISOString().slice(0,10);
   if(s.lastDate===yesterday){s.count++;s.lastDate=today;}
@@ -1170,6 +1210,109 @@ function checkStreak(){
   const yesterday=new Date(Date.now()-86400000).toISOString().slice(0,10);
   if(s.lastDate!==today&&s.lastDate!==yesterday){s.count=0;try{localStorage.setItem('el_streak',JSON.stringify(s));}catch(e){}}
   return s;
+}
+
+// ━━ Attendance Calendar ━━
+function getAttendLog(){try{return JSON.parse(localStorage.getItem('el_attend'))||{};}catch(e){return{};}}
+function markAttend(){
+  const log=getAttendLog();
+  const today=new Date().toISOString().slice(0,10);
+  if(!log[today])log[today]=0;
+  log[today]++;
+  // Keep only last 90 days
+  const cutoff=new Date(Date.now()-90*86400000).toISOString().slice(0,10);
+  Object.keys(log).forEach(k=>{if(k<cutoff)delete log[k];});
+  try{localStorage.setItem('el_attend',JSON.stringify(log));}catch(e){}
+}
+function getAttendLevel(count){
+  if(!count||count===0)return 0;
+  if(count===1)return 1;
+  if(count<=3)return 2;
+  if(count<=5)return 3;
+  return 4;
+}
+function renderAttendCal(){
+  const log=getAttendLog();
+  const today=new Date();
+  const todayStr=today.toISOString().slice(0,10);
+
+  // Show 8 weeks (56 days) ending today
+  const weeks=8;
+  const totalDays=weeks*7;
+
+  // Find the Monday of the starting week
+  const endDay=new Date(today);
+  const startDay=new Date(today);
+  startDay.setDate(startDay.getDate()-totalDays+1);
+  // Adjust to Monday
+  const startDow=startDay.getDay();
+  startDay.setDate(startDay.getDate()-(startDow===0?6:startDow-1));
+
+  const dayLabels=['월','화','수','목','금','토','일'];
+  let html=dayLabels.map(d=>`<div class="attend-day-label">${d}</div>`).join('');
+
+  const d=new Date(startDay);
+  let activeDays=0;
+  let thisMonthDays=0;
+  const thisMonth=today.getMonth();
+
+  for(let i=0;i<weeks*7;i++){
+    const ds=d.toISOString().slice(0,10);
+    const count=log[ds]||0;
+    const lv=getAttendLevel(count);
+    const isFuture=d>today;
+    const isToday=ds===todayStr;
+
+    if(count>0)activeDays++;
+    if(d.getMonth()===thisMonth&&count>0)thisMonthDays++;
+
+    html+=`<div class="attend-cell ${isFuture?'future':'lv'+lv}${isToday?' today':''}" title="${ds}: ${count}회"></div>`;
+    d.setDate(d.getDate()+1);
+  }
+
+  // Stats
+  const streak=checkStreak();
+  const totalLogged=Object.keys(log).length;
+
+  return `<div class="attend-cal">
+    <div class="attend-header">
+      <div>
+        <div style="font-size:15px;font-weight:700">출석 캘린더</div>
+        <div style="font-size:11px;color:var(--sub);margin-top:2px">${today.getMonth()+1}월 ${thisMonthDays}일 학습</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="font-size:20px">🔥</span>
+        <span style="font-size:18px;font-weight:800;color:var(--text)">${streak.count}일</span>
+        <span style="font-size:11px;color:var(--sub);font-weight:500">연속</span>
+      </div>
+    </div>
+    <div class="attend-grid">
+      ${html}
+    </div>
+    <div class="attend-legend">
+      <span>적음</span>
+      <div class="attend-legend-box lv0" style="background:var(--g100)"></div>
+      <div class="attend-legend-box" style="background:rgba(49,130,246,.2)"></div>
+      <div class="attend-legend-box" style="background:rgba(49,130,246,.4)"></div>
+      <div class="attend-legend-box" style="background:rgba(49,130,246,.65)"></div>
+      <div class="attend-legend-box" style="background:var(--blue)"></div>
+      <span>많음</span>
+    </div>
+    <div class="attend-stats">
+      <div class="attend-stat">
+        <div class="attend-stat-num">${activeDays}</div>
+        <div class="attend-stat-label">최근 학습일</div>
+      </div>
+      <div class="attend-stat">
+        <div class="attend-stat-num">${streak.count}</div>
+        <div class="attend-stat-label">연속 학습</div>
+      </div>
+      <div class="attend-stat">
+        <div class="attend-stat-num">${totalLogged}</div>
+        <div class="attend-stat-label">누적 학습일</div>
+      </div>
+    </div>
+  </div>`;
 }
 
 // ━━ Daily Vocab Quiz ━━
@@ -1374,7 +1517,7 @@ function isAdmin(){return!!localStorage.getItem('el_admin');}
 function adminLogin(id,pw){if(id===ADMIN_ID&&pw===ADMIN_PW){localStorage.setItem('el_admin','1');return true;}return false;}
 function adminLogout(){localStorage.removeItem('el_admin');}
 const gH=()=>{try{return JSON.parse(localStorage.getItem('el_h'))||[];}catch(e){return[];}};
-const sH=e=>{const h=gH();h.push(e);if(h.length>20)h.shift();try{localStorage.setItem('el_h',JSON.stringify(h));}catch(e){}};
+const sH=e=>{const h=gH();h.push(e);if(h.length>50)h.shift();try{localStorage.setItem('el_h',JSON.stringify(h));}catch(e){}};
 
 const $=id=>document.getElementById(id),app=$('app'),NM='①②③④⑤⑥⑦⑧⑨⑩';
 const esc=s=>String(s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -1691,6 +1834,8 @@ function rHome(){setBottom(null);
   const totalQs=hist.reduce((a,r)=>a+(r.ok||0)+(r.no||0),0);
   const wr=getWeeklyReport();
   const ds=getDailyState();const today=new Date().toISOString().slice(0,10);const dailyDone=ds.date===today&&ds.completed;
+  // Mark daily visit attendance (once per session)
+  if(!sessionStorage.getItem('el_visited')){sessionStorage.setItem('el_visited','1');markAttend();}
 
   app.innerHTML=`<div class="page">
     <!-- 1. Greeting Header -->
@@ -1718,6 +1863,9 @@ function rHome(){setBottom(null);
       ${ddays.mid?`<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:13px;font-weight:600;color:var(--text)">중간고사</span><span style="font-size:12px;color:var(--sub)">${new Date(ddays.mid).getMonth()+1}.${new Date(ddays.mid).getDate()}</span></div><span style="font-size:13px;font-weight:800;color:var(--blue)">${ddayStr(new Date(ddays.mid))}</span></div>`:''}
       ${ddays.fin?`<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:13px;font-weight:600;color:var(--text)">기말고사</span><span style="font-size:12px;color:var(--sub)">${new Date(ddays.fin).getMonth()+1}.${new Date(ddays.fin).getDate()}</span></div><span style="font-size:13px;font-weight:800;color:var(--blue)">${ddayStr(new Date(ddays.fin))}</span></div>`:''}
     </div>`;})()}
+
+    <!-- 3. 출석 캘린더 -->
+    ${renderAttendCal()}
 
     <!-- 4. 나의 학습 현황 -->
     <div class="sec-label">나의 학습 현황</div>
@@ -2238,6 +2386,26 @@ function rRecord(){setBottom(null);
       </div>
     </div>`:''}
 
+    ${hist.length>=2?`
+    <!-- Score Trend Chart -->
+    <div class="sec-label">성적 추이</div>
+    <div class="trend-chart">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div style="font-size:15px;font-weight:700">점수 변화</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          ${(()=>{
+            const scores=hist.map(r=>r.score);
+            const first=scores[0],last=scores[scores.length-1],diff=last-first;
+            const col=diff>0?'var(--green)':diff<0?'var(--red)':'var(--sub)';
+            const arrow=diff>0?'↑':diff<0?'↓':'→';
+            return diff!==0?'<span style="font-size:13px;font-weight:800;color:'+col+'">'+arrow+Math.abs(diff)+'점</span>':'';
+          })()}
+        </div>
+      </div>
+      <div id="trendChart"></div>
+      <button class="share-card-btn" onclick="generateInstaCard()">📸 인스타 공유카드 만들기</button>
+    </div>`:''}
+
     ${(()=>{const wr=getWeeklyReport();if(!wr)return '';return `
     <div class="sec-label">이번 주 학습</div>
     <div class="card" style="padding:20px">
@@ -2288,6 +2456,206 @@ function rRecord(){setBottom(null);
 
     <div class="tab-spacer"></div>
   </div>`;
+  setTimeout(()=>{renderTrendChart();applyCountUps();},50);
+}
+
+// ━━ Score Trend Chart ━━
+function renderTrendChart(){
+  const el=document.getElementById('trendChart');if(!el)return;
+  const hist=gH();if(hist.length<2)return;
+
+  const W=340,H=180,padL=32,padR=16,padT=20,padB=28;
+  const scores=hist.map(r=>r.score);
+  const minS=Math.max(0,Math.min(...scores)-10),maxS=Math.min(100,Math.max(...scores)+10);
+  const rangeS=maxS-minS||1;
+  const n=scores.length;
+
+  const chartW=W-padL-padR,chartH=H-padT-padB;
+  const pts=scores.map((s,i)=>{
+    const x=padL+(n>1?i/(n-1):0.5)*chartW;
+    const y=padT+chartH-(s-minS)/rangeS*chartH;
+    return{x,y,s};
+  });
+
+  const pathD=pts.map((p,i)=>i===0?`M${p.x},${p.y}`:`L${p.x},${p.y}`).join(' ');
+  const areaD=pathD+` L${pts[pts.length-1].x},${padT+chartH} L${pts[0].x},${padT+chartH} Z`;
+
+  const bestIdx=scores.indexOf(Math.max(...scores));
+
+  // Grid lines
+  const gridCount=4;
+  let gridLines='';
+  for(let i=0;i<=gridCount;i++){
+    const val=Math.round(minS+(maxS-minS)*i/gridCount);
+    const y=padT+chartH-((val-minS)/rangeS)*chartH;
+    gridLines+=`<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" class="trend-grid"/>`;
+    gridLines+=`<text x="${padL-6}" y="${y+1}" class="trend-label" text-anchor="end">${val}</text>`;
+  }
+
+  // Date labels (first and last)
+  let dateLabels='';
+  if(hist.length>=2){
+    dateLabels+=`<text x="${pts[0].x}" y="${H-4}" class="trend-label" text-anchor="start">${hist[0].date?.replace(/\d{4}\.\s*/,'').replace(/\./g,'/')||''}</text>`;
+    dateLabels+=`<text x="${pts[pts.length-1].x}" y="${H-4}" class="trend-label" text-anchor="end">${hist[hist.length-1].date?.replace(/\d{4}\.\s*/,'').replace(/\./g,'/')||''}</text>`;
+  }
+
+  let svg=`<svg class="trend-svg" viewBox="0 0 ${W} ${H}">
+    <defs><linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--blue)"/><stop offset="1" stop-color="var(--blue)" stop-opacity="0"/></linearGradient></defs>
+    ${gridLines}
+    <path d="${areaD}" class="trend-area"/>
+    <path d="${pathD}" class="trend-line"/>
+    ${pts.map((p,i)=>`<circle cx="${p.x}" cy="${p.y}" r="${i===pts.length-1||i===bestIdx?5:3}" class="trend-dot${i===bestIdx?' best':''}"/>${i===pts.length-1||i===bestIdx?`<text x="${p.x}" y="${p.y-10}" class="trend-score-label" text-anchor="middle">${p.s}</text>`:''}`).join('')}
+    ${dateLabels}
+  </svg>`;
+
+  el.innerHTML=svg;
+}
+
+// ━━ Instagram Share Card Generator ━━
+function generateInstaCard(){
+  const hist=gH();const p=profile;const sk=checkStreak();const xd=getXP();
+  const scores=hist.map(r=>r.score);
+  const latest=scores.length?scores[scores.length-1]:0;
+  const first=scores.length?scores[0]:0;
+  const best=scores.length?Math.max(...scores):0;
+  const diff=latest-first;
+  const totalTests=hist.length;
+
+  const W=1080,H=1920,sc=1;
+  const cv=document.createElement('canvas');cv.width=W;cv.height=H;
+  const c=cv.getContext('2d');
+
+  // Helpers
+  function rr(x,y,w,h,rad){c.beginPath();c.moveTo(x+rad,y);c.lineTo(x+w-rad,y);c.quadraticCurveTo(x+w,y,x+w,y+rad);c.lineTo(x+w,y+h-rad);c.quadraticCurveTo(x+w,y+h,x+w-rad,y+h);c.lineTo(x+rad,y+h);c.quadraticCurveTo(x,y+h,x,y+h-rad);c.lineTo(x,y+rad);c.quadraticCurveTo(x,y,x+rad,y);c.closePath();}
+  function fillRR(x,y,w,h,rad,color){rr(x,y,w,h,rad);c.fillStyle=color;c.fill();}
+  function txt(text,x,y,size,weight,color,align){c.font=weight+' '+size+'px "Noto Sans KR",sans-serif';c.fillStyle=color;c.textAlign=align||'left';c.textBaseline='middle';c.fillText(text,x,y);}
+
+  // ── Dark gradient background
+  const bg=c.createLinearGradient(0,0,W,H);
+  bg.addColorStop(0,'#0F0F23');bg.addColorStop(0.5,'#1A1A3E');bg.addColorStop(1,'#0D0D2B');
+  c.fillStyle=bg;c.fillRect(0,0,W,H);
+
+  // ── Decorative circles
+  c.globalAlpha=0.06;
+  c.fillStyle='#3182F6';
+  c.beginPath();c.arc(W-80,180,200,0,Math.PI*2);c.fill();
+  c.beginPath();c.arc(80,H-200,150,0,Math.PI*2);c.fill();
+  c.globalAlpha=1;
+
+  let Y=120;
+
+  // ── Logo & branding
+  txt('ENGLISH LIBERATION',W/2,Y,28,'700','rgba(255,255,255,.4)','center');
+  Y+=60;
+  txt('영어해방공식',W/2,Y,52,'900','#FFFFFF','center');
+  Y+=50;
+  txt('나의 성적 리포트',W/2,Y,28,'600','rgba(255,255,255,.5)','center');
+  Y+=100;
+
+  // ── Score hero
+  fillRR(80,Y,W-160,320,32,'rgba(255,255,255,.08)');
+  c.strokeStyle='rgba(255,255,255,.1)';c.lineWidth=1;rr(80,Y,W-160,320,32);c.stroke();
+
+  if(scores.length>=2){
+    txt('점수 변화',W/2,Y+50,24,'600','rgba(255,255,255,.6)','center');
+    txt(first+'점',W/2-120,Y+130,72,'900','rgba(255,255,255,.4)','center');
+    txt('→',W/2,Y+130,48,'400','rgba(255,255,255,.3)','center');
+    txt(latest+'점',W/2+120,Y+130,72,'900','#FFFFFF','center');
+    const diffCol=diff>0?'#00E08E':diff<0?'#FF6B6B':'rgba(255,255,255,.5)';
+    const diffTxt=diff>0?'+'+diff+'점 향상 📈':diff<0?diff+'점':'변화 없음';
+    txt(diffTxt,W/2,Y+220,36,'800',diffCol,'center');
+    if(diff>0&&first>0){
+      const pctUp=Math.round(diff/first*100);
+      txt(pctUp+'% 상승',W/2,Y+270,22,'600','rgba(255,255,255,.4)','center');
+    }
+  } else {
+    txt('최근 점수',W/2,Y+80,24,'600','rgba(255,255,255,.6)','center');
+    txt(latest+'점',W/2,Y+180,96,'900','#FFFFFF','center');
+  }
+  Y+=370;
+
+  // ── Mini trend graph (if enough data)
+  if(scores.length>=3){
+    const gW=W-160,gH=200,gX=80,gY=Y;
+    fillRR(gX,gY,gW,gH+40,24,'rgba(255,255,255,.05)');
+
+    const minS=Math.max(0,Math.min(...scores)-10);
+    const maxS=Math.min(100,Math.max(...scores)+10);
+    const rangeS=maxS-minS||1;
+    const padG=40;
+    const cW=gW-padG*2,cH=gH-padG;
+
+    // Draw line
+    c.beginPath();
+    scores.forEach((s,i)=>{
+      const x=gX+padG+(scores.length>1?i/(scores.length-1):0.5)*cW;
+      const y=gY+20+padG+cH-(s-minS)/rangeS*cH;
+      if(i===0)c.moveTo(x,y);else c.lineTo(x,y);
+    });
+    c.strokeStyle='#3182F6';c.lineWidth=4;c.lineCap='round';c.lineJoin='round';c.stroke();
+
+    // Area fill
+    const firstX=gX+padG,lastX=gX+padG+cW;
+    c.lineTo(lastX,gY+20+padG+cH);c.lineTo(firstX,gY+20+padG+cH);c.closePath();
+    const aGrad=c.createLinearGradient(0,gY,0,gY+gH+40);
+    aGrad.addColorStop(0,'rgba(49,130,246,.3)');aGrad.addColorStop(1,'rgba(49,130,246,0)');
+    c.fillStyle=aGrad;c.fill();
+
+    // Dots
+    scores.forEach((s,i)=>{
+      const x=gX+padG+(scores.length>1?i/(scores.length-1):0.5)*cW;
+      const y=gY+20+padG+cH-(s-minS)/rangeS*cH;
+      c.beginPath();c.arc(x,y,i===scores.length-1?8:5,0,Math.PI*2);
+      c.fillStyle=i===scores.length-1?'#3182F6':'rgba(49,130,246,.6)';c.fill();
+      if(i===scores.length-1||i===0){
+        txt(s+'',x,y-22,20,'700','rgba(255,255,255,.9)','center');
+      }
+    });
+
+    Y+=gH+80;
+  } else {
+    Y+=20;
+  }
+
+  // ── Stats row
+  fillRR(80,Y,W-160,180,24,'rgba(255,255,255,.08)');
+  const statW=(W-160)/3;
+  [{v:sk.count>0?sk.count+'일':'—',l:'연속 학습',i:'🔥'},{v:totalTests+'회',l:'총 응시',i:'📝'},{v:'Lv.'+xd.lv,l:lvName(xd.lv),i:'⭐'}].forEach((s,i)=>{
+    const cx=80+statW*i+statW/2;
+    txt(s.i,cx,Y+45,36,'400','#FFF','center');
+    txt(s.v,cx,Y+100,32,'900','#FFFFFF','center');
+    txt(s.l,cx,Y+140,18,'500','rgba(255,255,255,.5)','center');
+    if(i<2){c.fillStyle='rgba(255,255,255,.08)';c.fillRect(80+statW*(i+1),Y+30,1,120);}
+  });
+  Y+=230;
+
+  // ── Best score highlight
+  if(best>0){
+    txt('🏆 최고 점수  '+best+'점',W/2,Y,28,'700','rgba(255,255,255,.7)','center');
+    Y+=60;
+  }
+
+  // ── Motivational quote
+  const quotes=diff>15?'"포기하지 않으면 반드시 오른다"':diff>0?'"꾸준함이 실력이 된다"':'"오늘의 노력이 내일의 점수"';
+  txt(quotes,W/2,Y,24,'500','rgba(255,255,255,.35)','center');
+  Y+=80;
+
+  // ── Footer
+  c.fillStyle='rgba(255,255,255,.08)';c.fillRect(80,H-200,W-160,1);
+  txt('영어해방공식',W/2,H-140,28,'800','rgba(255,255,255,.6)','center');
+  txt('ENGLISH LIBERATION · @yhg_academy',W/2,H-95,20,'500','rgba(255,255,255,.3)','center');
+
+  // Download
+  cv.toBlob(blob=>{
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='영어해방공식_성적리포트_'+p.name+'_'+new Date().toISOString().slice(0,10)+'.png';
+    a.click();
+    toast('📸 인스타 공유카드를 저장했어요!');
+    // Award XP for sharing
+    addXP(10);
+    setTimeout(()=>toast('+10 XP 획득!'),1500);
+  },'image/png');
 }
 
 // ━━ MY (마이 탭) ━━
@@ -2622,7 +2990,7 @@ function openZoomSheet(){
         <div style="font-size:14px;font-weight:700;color:var(--text)">9999</div>
       </div>
     </div>
-    <button onclick="window.open('https://zoom.us/j/89841032230?pwd=9999','_blank')" class="btn btn-blue" style="margin-top:8px">줌 테스트 입장하기</button>
+    <button onclick="window.open('https://us06web.zoom.us/j/8984103223?pwd=CWrLZH59bc4rROlHEhDEyFFLXYrnrv.1','_blank')" class="btn btn-blue" style="margin-top:8px">줌 테스트 입장하기</button>
     <button onclick="document.getElementById('zs').remove()" class="btn btn-ghost" style="margin-top:8px">닫기</button>
   </div>`;
   document.body.appendChild(d);
