@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="ko" data-theme="light">
 <head>
+<script>
+// /apply 접속 시 naesinfit.vercel.app으로 리다이렉트
+if (window.location.pathname.startsWith('/apply')) {
+  window.location.replace('https://naesinfit.vercel.app' + window.location.pathname + window.location.search);
+} else if (window.location.pathname === '/enroll' || window.location.pathname === '/enroll/') {
+  window.location.replace('https://naesinfit.vercel.app/enroll' + window.location.search);
+}
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>영어해방공식 — 영어 노베이스를 위한 온라인 영어학원</title>
