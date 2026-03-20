@@ -150,6 +150,9 @@ input,select{font-family:inherit}
 .skeleton::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);animation:shimmer 1.5s infinite}
 [data-theme="dark"] .skeleton::after{background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent)}
 @keyframes shimmer{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+@keyframes homePulse{0%,100%{box-shadow:0 0 0 0 rgba(49,130,246,0.4)}50%{box-shadow:0 0 0 8px rgba(49,130,246,0)}}
+@keyframes homeCountUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.glass-card{background:rgba(255,255,255,0.05);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.08);border-radius:20px}
 
 /* ━━ Navigation Bar ━━ */
 .nav{position:sticky;top:0;z-index:100;height:52px;display:flex;align-items:center;padding:0 20px;background:var(--nav-bg);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px)}
@@ -1845,257 +1848,199 @@ function rHome(){setBottom(null);
   // Mark daily visit attendance (once per session)
   if(!sessionStorage.getItem('el_visited')){sessionStorage.setItem('el_visited','1');markAttend();}
 
-  app.innerHTML=`<div class="page">
-    <!-- 1. Greeting Header -->
-    <div style="padding:24px 20px 0">
-      <div style="display:flex;align-items:center;justify-content:space-between">
-        <div>
-          <div style="font-size:14px;color:var(--sub);font-weight:500">안녕하세요 👋</div>
-          <div class="t-heading" style="margin-top:2px">${esc(profile.name)}님</div>
+  // Weekly streak dots data
+  const now=new Date();const dayOfWeek=now.getDay();
+  const weekStart=new Date(now);weekStart.setDate(now.getDate()-(dayOfWeek===0?6:dayOfWeek-1));weekStart.setHours(0,0,0,0);
+  const attendLog=getAttendLog();
+  const dayLabels=['월','화','수','목','금','토','일'];
+  let weekDaysHtml='';let weekDoneCount=0;
+  for(let i=0;i<7;i++){
+    const d=new Date(weekStart);d.setDate(weekStart.getDate()+i);
+    const dStr=d.toISOString().slice(0,10);
+    const done=!!attendLog[dStr];
+    const isToday=dStr===today;
+    if(done)weekDoneCount++;
+    const circleStyle=done
+      ?'background:linear-gradient(135deg,#FFD700,#FFA500);box-shadow:0 0 10px rgba(255,215,0,0.3)'
+      :isToday
+        ?'background:rgba(49,130,246,0.2);border:2px solid #3182F6;animation:homePulse 2s infinite'
+        :'background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1)';
+    const innerStyle=done?'color:#000;font-weight:800':isToday?'color:#3182F6;font-weight:700':'color:rgba(255,255,255,0.2)';
+    const innerChar=done?'&#10003;':isToday?'&#9673;':'&middot;';
+    weekDaysHtml+=`<div style="text-align:center"><div style="font-size:10px;color:rgba(255,255,255,0.3);margin-bottom:4px">${dayLabels[i]}</div><div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;${circleStyle}"><span style="font-size:12px;${innerStyle}">${innerChar}</span></div></div>`;
+  }
+
+  // Growth data
+  const weekAgo=new Date(now-7*86400000);const twoWeeksAgo=new Date(now-14*86400000);
+  const thisWeekHist=hist.filter(r=>{const d=new Date(r.date);return d>=weekAgo;});
+  const lastWeekHist=hist.filter(r=>{const d=new Date(r.date);return d>=twoWeeksAgo&&d<weekAgo;});
+  const avgThis=thisWeekHist.length?Math.round(thisWeekHist.reduce((a,r)=>a+r.score,0)/thisWeekHist.length):0;
+  const avgLast=lastWeekHist.length?Math.round(lastWeekHist.reduce((a,r)=>a+r.score,0)/lastWeekHist.length):0;
+  const scoreDiff=avgThis-avgLast;const improved=scoreDiff>=0;
+  const maxScore=hist.length?Math.max(...hist.map(r=>r.score)):0;
+
+  // D-day data
+  const suneung=getSuneungDate();const ddays=getDdays();
+
+  // Next goal
+  const nextLvXp=xpForLevel(xd.lv);const goalPct=xpPct;
+  const nextGoalName='Lv.'+(xd.lv+1)+' '+lvName(xd.lv+1)+' 달성';
+
+  // Zoom survey
+  const submitted=getThisWeekSurvey();
+  const isSunAfter10=now.getDay()===0&&now.getHours()>=22;
+  const isOpen=now.getDay()===0?now.getHours()>=22:now.getDay()>=1;
+
+  app.innerHTML=`<div class="page" style="background:#0F0F14;min-height:100vh">
+    <!-- 1. Hero Section -->
+    <div style="background:linear-gradient(180deg,#1a1a2e 0%,#0F0F14 100%);padding:24px 20px 16px;position:relative;overflow:hidden">
+      <div style="position:absolute;top:-50px;right:-50px;width:200px;height:200px;background:radial-gradient(circle,rgba(255,215,0,0.08) 0%,transparent 70%);border-radius:50%"></div>
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;position:relative">
+        <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#FFD700,#FFA500);display:flex;align-items:center;justify-content:center;box-shadow:0 0 20px rgba(255,215,0,0.3);flex-shrink:0">
+          <span style="font-size:18px;font-weight:900;color:#000">Lv.${xd.lv}</span>
         </div>
-        <button onclick="toggleTheme();R()" style="width:40px;height:40px;border:1.5px solid var(--border);border-radius:50%;background:var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px">${localStorage.getItem('el_theme')==='dark'?'☀️':'🌙'}</button>
+        <div style="flex:1">
+          <div style="font-size:20px;font-weight:800;color:#fff">${esc(profile.name)}!</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.5);margin-top:2px">${lvName(xd.lv)}</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:28px;filter:drop-shadow(0 0 8px rgba(255,100,0,0.5))">🔥</div>
+          <div style="font-size:11px;font-weight:700;color:#FF6B35;margin-top:2px">${sk.count}일</div>
+        </div>
+      </div>
+      <div style="margin-bottom:4px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:11px;color:rgba(255,255,255,0.4)">XP ${xd.xp}/${xpForLevel(xd.lv)}</span>
+        <span style="font-size:11px;color:#FFD700;font-weight:600">${xpPct}%</span>
+      </div>
+      <div style="height:6px;background:rgba(255,255,255,0.08);border-radius:100px;overflow:hidden">
+        <div style="height:100%;background:linear-gradient(90deg,#FFD700,#FFA500);border-radius:100px;transition:width 1s ease;width:${xpPct}%"></div>
       </div>
     </div>
 
-    <!-- 2. D-day -->
-    ${(()=>{const suneung=getSuneungDate();const ddays=getDdays();const hasDday=ddays.mid||ddays.fin;return `
-    <div class="card" style="padding:16px 20px;margin-top:12px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${hasDday?'8px':'0'}">
-        <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:16px">📅</span>
-          <span style="font-size:14px;font-weight:700;color:var(--text)">수능</span>
-          <span style="font-size:12px;color:var(--sub)">${suneung.getFullYear()}.${suneung.getMonth()+1}.${suneung.getDate()}</span>
-        </div>
-        <span style="font-size:15px;font-weight:800;color:var(--red)">${ddayStr(suneung)}</span>
+    <!-- 2. 오늘의 도전 -->
+    <div style="margin:12px 16px 12px;padding:20px;background:rgba(255,255,255,0.05);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.08);border-radius:20px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+        <span style="font-size:18px">⚡</span>
+        <span style="font-size:15px;font-weight:700;color:#fff">오늘의 도전</span>
+        <span style="font-size:11px;color:#FFD700;margin-left:auto;font-weight:600">+30 보너스 XP</span>
       </div>
-      ${ddays.mid?`<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:13px;font-weight:600;color:var(--text)">중간고사</span><span style="font-size:12px;color:var(--sub)">${new Date(ddays.mid).getMonth()+1}.${new Date(ddays.mid).getDate()}</span></div><span style="font-size:13px;font-weight:800;color:var(--blue)">${ddayStr(new Date(ddays.mid))}</span></div>`:''}
-      ${ddays.fin?`<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:13px;font-weight:600;color:var(--text)">기말고사</span><span style="font-size:12px;color:var(--sub)">${new Date(ddays.fin).getMonth()+1}.${new Date(ddays.fin).getDate()}</span></div><span style="font-size:13px;font-weight:800;color:var(--blue)">${ddayStr(new Date(ddays.fin))}</span></div>`:''}
-    </div>`;})()}
-
-    <!-- 3. 출석 캘린더 -->
-    ${renderAttendCal()}
-
-    <!-- 4. 나의 학습 현황 -->
-    <div class="sec-label">나의 학습 현황</div>
-    <div class="card" style="padding:20px">
-      <!-- 상단 통계 -->
-      <div style="display:flex;gap:8px;margin-bottom:16px">
-        <div style="flex:1;text-align:center;padding:12px 0;background:var(--g50);border-radius:var(--r-md)">
-          <div style="font-size:20px;font-weight:800;color:var(--text)">${sk.count>0?sk.count+'일':'—'}</div>
-          <div style="font-size:10px;color:var(--sub);margin-top:2px;font-weight:600">연속 학습</div>
-        </div>
-        <div style="flex:1;text-align:center;padding:12px 0;background:var(--g50);border-radius:var(--r-md)">
-          <div style="font-size:20px;font-weight:800;color:var(--blue)">${totalQs}</div>
-          <div style="font-size:10px;color:var(--sub);margin-top:2px;font-weight:600">풀은 문제</div>
-        </div>
-        <div style="flex:1;text-align:center;padding:12px 0;background:var(--g50);border-radius:var(--r-md)">
-          <div style="font-size:20px;font-weight:800;color:var(--green)">${totalTests}</div>
-          <div style="font-size:10px;color:var(--sub);margin-top:2px;font-weight:600">총 응시</div>
-        </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <button onclick="${dailyDone?'toast(\'오늘의 퀴즈는 이미 완료했어요!\')':'startDailyQuiz()'}" style="padding:14px;border-radius:14px;${dailyDone?'background:rgba(0,192,114,0.15);border:1px solid rgba(0,192,114,0.3);color:#00C072':'background:linear-gradient(135deg,#3182F6,#1B64DA);border:none;color:#fff'};font-size:14px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px">
+          <span style="font-size:24px">${dailyDone?'✅':'📝'}</span>
+          ${dailyDone?'퀴즈 완료!':'단어 퀴즈'}
+          ${dailyDone&&ds.score?'<span style="font-size:11px;opacity:.7">'+ds.score+'점</span>':''}
+        </button>
+        <button onclick="switchTab('learn')" style="padding:14px;border-radius:14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.8);font-size:14px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px">
+          <span style="font-size:24px">📚</span>
+          시험 보기
+        </button>
       </div>
-      ${wr?`<!-- 이번 주 성적 -->
-      <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--blue-xl);border-radius:var(--r-md);margin-bottom:16px">
-        <div style="width:44px;height:44px;border-radius:50%;background:conic-gradient(var(--blue) ${Math.round(wr.avgScore)}%,var(--g200) 0);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <div style="width:34px;height:34px;border-radius:50%;background:var(--blue-xl);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--blue)">${wr.avgScore}</div>
-        </div>
-        <div style="flex:1">
-          <div style="font-size:13px;font-weight:700;color:var(--text)">이번 주 평균 ${wr.avgScore}점</div>
-          <div style="font-size:11px;color:var(--sub);margin-top:2px">${wr.count}회 응시 · 최고 ${wr.bestScore}점</div>
-        </div>
+    </div>
+
+    <!-- 3. D-day Row -->
+    <div style="margin:0 16px 12px;display:flex;gap:8px">
+      <div style="flex:1;padding:12px;background:rgba(255,255,255,0.04);border-radius:14px;text-align:center;border:1px solid rgba(255,255,255,0.06)">
+        <div style="font-size:11px;color:rgba(255,255,255,0.4)">수능</div>
+        <div style="font-size:16px;font-weight:800;color:#F04452">${ddayStr(suneung)}</div>
+      </div>
+      ${ddays.mid?`<div style="flex:1;padding:12px;background:rgba(255,255,255,0.04);border-radius:14px;text-align:center;border:1px solid rgba(255,255,255,0.06)">
+        <div style="font-size:11px;color:rgba(255,255,255,0.4)">중간고사</div>
+        <div style="font-size:16px;font-weight:800;color:#3182F6">${ddayStr(new Date(ddays.mid))}</div>
       </div>`:''}
-      <!-- 레벨 게이지 -->
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
-        <div style="width:40px;height:40px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;color:white;font-size:16px;font-weight:900;flex-shrink:0">${xd.lv}</div>
-        <div style="flex:1">
-          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-            <span style="font-size:12px;font-weight:700;color:var(--text)">Lv.${xd.lv} ${lvName(xd.lv)}</span>
-            <span style="font-size:11px;color:var(--hint)">${xd.xp}/${xpForLevel(xd.lv)} XP</span>
-          </div>
-          <div style="height:6px;background:var(--g100);border-radius:3px;overflow:hidden"><div style="height:100%;width:${xpPct}%;background:var(--blue);border-radius:3px;transition:width .5s var(--ease)"></div></div>
-        </div>
-      </div>
-      <!-- 오늘의 퀴즈 CTA -->
-      <button onclick="${dailyDone?'toast(\'오늘의 퀴즈는 이미 완료했어요!\')':'startDailyQuiz()'}" style="width:100%;padding:14px;border:none;border-radius:var(--r-md);font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .15s;${dailyDone?'background:var(--green-l);color:var(--green)':'background:var(--blue);color:white'}">
-        ${dailyDone?'✅ 오늘의 단어 퀴즈 완료!':'⚡ 오늘의 단어 퀴즈 풀기'}
-        ${dailyDone?'<span style="font-size:12px;opacity:.7">'+ds.score+'점</span>':''}
-      </button>
-    </div>
-
-    <!-- 4.5 주간 리포트 -->
-    ${(()=>{
-      const wr=getWeeklyReport();
-      const xd=getXP();const xpPct=Math.min(100,Math.round(xd.xp/xpForLevel(xd.lv)*100));
-      const skData=checkStreak();
-      const hist=gH();
-      // This week's homework-like completion: count days with test activity this week
-      const now=new Date();const weekAgo=new Date(now-7*86400000);
-      const thisWeekHist=hist.filter(r=>{const d=new Date(r.date);return d>=weekAgo;});
-      const thisWeekDays=new Set(thisWeekHist.map(r=>new Date(r.date).toISOString().slice(0,10)));
-      const hwDoneCount=thisWeekDays.size;
-      const hwRate=Math.min(100,Math.round(hwDoneCount/7*100));
-      // Percentile estimate based on performance
-      const perf=wr?wr.avgScore:0;
-      const percentile=perf>=90?Math.floor(Math.random()*10)+1:perf>=80?Math.floor(Math.random()*15)+10:perf>=70?Math.floor(Math.random()*20)+25:perf>=60?Math.floor(Math.random()*20)+45:Math.floor(Math.random()*30)+65;
-      // Motivation message
-      const motiv=hwRate>=90?'이번 주도 완벽! 1등급 가즈아 🚀':hwRate>=70?'잘하고 있어요! 조금만 더 💪':hwRate>=50?'힘내자! 다음 주는 더 잘할 수 있어 ✊':'포기하지 마! 한 걸음씩 가면 돼 🌱';
-      // Streak in weeks
-      const streakWeeks=Math.floor(skData.count/7);
-      // Checklist items
-      const dailyDone2=getDailyState();const today2=now.toISOString().slice(0,10);const quizDone=dailyDone2.date===today2&&dailyDone2.completed;
-      const hasTestThisWeek=thisWeekHist.length>0;
-      const surveyDone=!!getThisWeekSurvey();
-
-      return `
-    <div class="sec-label">주간 리포트</div>
-    <div class="card" style="padding:0;overflow:hidden">
-      <!-- 이번 주 성과 카드 -->
-      <div style="padding:20px;background:linear-gradient(135deg,var(--blue),var(--blue-d));color:white;position:relative;overflow:hidden">
-        <div style="position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.1)"></div>
-        <div style="position:absolute;bottom:-30px;right:30px;width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.06)"></div>
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-          <div style="width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900">${xd.lv}</div>
-          <div>
-            <div style="font-size:15px;font-weight:800">Lv.${xd.lv} ${lvName(xd.lv)}</div>
-            <div style="font-size:11px;opacity:.8">${xd.xp}/${xpForLevel(xd.lv)} XP</div>
-          </div>
-          ${skData.count>=7?'<div style="margin-left:auto;padding:4px 10px;background:rgba(255,255,255,.2);border-radius:20px;font-size:12px;font-weight:700">🔥 '+streakWeeks+'주 연속!</div>':''}
-        </div>
-        <!-- Level progress bar -->
-        <div style="height:6px;background:rgba(255,255,255,.2);border-radius:3px;overflow:hidden;margin-bottom:10px">
-          <div style="height:100%;width:${xpPct}%;background:rgba(255,255,255,.9);border-radius:3px;transition:width .5s var(--ease)"></div>
-        </div>
-        <div style="font-size:12px;opacity:.85">이번 주 학습 완료율: <b>${hwRate}%</b></div>
-      </div>
-
-      <!-- 같은 커리큘럼 학생 비교 -->
-      ${perf>0?`<div style="padding:16px 20px;border-bottom:1px solid var(--divider)">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <span style="font-size:13px;font-weight:700;color:var(--text)">📊 내 위치</span>
-          <span style="font-size:13px;font-weight:800;color:var(--blue)">상위 ${percentile}%</span>
-        </div>
-        <div style="height:8px;background:var(--g100);border-radius:4px;overflow:hidden;position:relative">
-          <div style="height:100%;width:${100-percentile}%;background:linear-gradient(90deg,var(--blue),var(--green));border-radius:4px;transition:width .8s var(--ease)"></div>
-        </div>
-        <div style="font-size:11px;color:var(--sub);margin-top:6px">같은 커리큘럼 학생 대비</div>
+      ${ddays.fin?`<div style="flex:1;padding:12px;background:rgba(255,255,255,0.04);border-radius:14px;text-align:center;border:1px solid rgba(255,255,255,0.06)">
+        <div style="font-size:11px;color:rgba(255,255,255,0.4)">기말고사</div>
+        <div style="font-size:16px;font-weight:800;color:#3182F6">${ddayStr(new Date(ddays.fin))}</div>
       </div>`:''}
+    </div>
 
-      <!-- 연속 출석 스트릭 -->
-      <div style="padding:16px 20px;border-bottom:1px solid var(--divider)">
-        <div style="display:flex;align-items:center;gap:10px">
-          <span style="font-size:24px">${skData.count>=7?'🔥':'💪'}</span>
-          <div style="flex:1">
-            <div style="font-size:14px;font-weight:700;color:var(--text)">${skData.count>=7?skData.count+'일 연속 학습 중!':(skData.count>0?skData.count+'일 연속 학습 중!':'아직 스트릭이 없어요')}</div>
-            <div style="font-size:11px;color:var(--sub);margin-top:2px">${skData.count>=7?'대단해요! 꾸준함이 실력이 됩니다':(skData.count>0?'계속 이어가세요!':'오늘부터 시작해보세요!')}</div>
-          </div>
+    <!-- 4. 이번 주 미니 스트릭 -->
+    <div style="margin:0 16px 12px;padding:16px;background:rgba(255,255,255,0.04);border-radius:16px;border:1px solid rgba(255,255,255,0.06)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <span style="font-size:13px;font-weight:600;color:rgba(255,255,255,0.7)">이번 주 학습</span>
+        <span style="font-size:12px;color:#FFD700;font-weight:600">${weekDoneCount}/7일</span>
+      </div>
+      <div style="display:flex;justify-content:space-between">${weekDaysHtml}</div>
+    </div>
+
+    <!-- 5. 나의 성장 -->
+    <div style="margin:0 16px 12px;padding:20px;background:rgba(255,255,255,0.04);border-radius:16px;border:1px solid rgba(255,255,255,0.06)">
+      <div style="font-size:13px;font-weight:600;color:rgba(255,255,255,0.7);margin-bottom:12px">나의 성장</div>
+      ${thisWeekHist.length?`<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:4px;animation:homeCountUp .5s ease">
+        <span style="font-size:28px;font-weight:900;color:#fff">${avgThis}점</span>
+        <span style="font-size:13px;font-weight:600;color:${improved?'#00C072':'#F04452'}">${improved?'↑':'↓'} ${Math.abs(scoreDiff)}점</span>
+        <span style="font-size:11px;color:rgba(255,255,255,0.3)">지난주 대비</span>
+      </div>`:`<div style="font-size:14px;color:rgba(255,255,255,0.4);margin-bottom:4px">아직 이번 주 시험 기록이 없어요</div>`}
+      <div style="display:flex;gap:12px;margin-top:12px">
+        <div style="flex:1;padding:10px;background:rgba(255,255,255,0.04);border-radius:10px;text-align:center">
+          <div style="font-size:16px;font-weight:800;color:#fff">${maxScore||'—'}</div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.35)">최고점</div>
+        </div>
+        <div style="flex:1;padding:10px;background:rgba(255,255,255,0.04);border-radius:10px;text-align:center">
+          <div style="font-size:16px;font-weight:800;color:#fff">${totalTests}회</div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.35)">응시</div>
+        </div>
+        <div style="flex:1;padding:10px;background:rgba(255,255,255,0.04);border-radius:10px;text-align:center">
+          <div style="font-size:16px;font-weight:800;color:#fff">${xd.xp+(xd.lv-1)*100}</div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.35)">총 XP</div>
         </div>
       </div>
+    </div>
 
-      <!-- 주간 동기부여 멘트 -->
-      <div style="padding:16px 20px;border-bottom:1px solid var(--divider);background:var(--g50)">
-        <div style="font-size:15px;font-weight:700;color:var(--text);text-align:center">${motiv}</div>
+    <!-- 6. 다음 목표 -->
+    <div style="margin:0 16px 12px;padding:16px;background:rgba(255,215,0,0.04);border-radius:16px;border:1px solid rgba(255,215,0,0.1)">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span style="font-size:16px">🏆</span>
+        <span style="font-size:13px;font-weight:600;color:#FFD700">다음 목표</span>
       </div>
-
-      <!-- 이번 주 완료한 것 체크리스트 -->
-      <div style="padding:16px 20px">
-        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px">이번 주 체크리스트</div>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <div style="display:flex;align-items:center;gap:10px">
-            <span style="width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;${hasTestThisWeek?'background:var(--green-l);color:var(--green)':'background:var(--g100);color:var(--hint)'}">${hasTestThisWeek?'✓':'·'}</span>
-            <span style="font-size:13px;color:${hasTestThisWeek?'var(--text)':'var(--sub)'};${hasTestThisWeek?'':'opacity:.7'}">${hasTestThisWeek?'✅ 시험 응시 완료':'시험 응시'}</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px">
-            <span style="width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;${quizDone?'background:var(--green-l);color:var(--green)':'background:var(--g100);color:var(--hint)'}">${quizDone?'✓':'·'}</span>
-            <span style="font-size:13px;color:${quizDone?'var(--text)':'var(--sub)'};${quizDone?'':'opacity:.7'}">${quizDone?'✅ 오늘의 퀴즈 완료':'오늘의 퀴즈'}</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px">
-            <span style="width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;${surveyDone?'background:var(--green-l);color:var(--green)':'background:var(--g100);color:var(--hint)'}">${surveyDone?'✓':'·'}</span>
-            <span style="font-size:13px;color:${surveyDone?'var(--text)':'var(--sub)'};${surveyDone?'':'opacity:.7'}">${surveyDone?'✅ 줌테스트 신청 완료':'줌테스트 스케줄 신청'}</span>
-          </div>
-        </div>
+      <div style="font-size:14px;font-weight:600;color:#fff;margin-bottom:8px">${nextGoalName}</div>
+      <div style="height:6px;background:rgba(255,255,255,0.06);border-radius:100px;overflow:hidden">
+        <div style="height:100%;background:linear-gradient(90deg,#FFD700,#FFA500);border-radius:100px;width:${goalPct}%"></div>
       </div>
-    </div>`;
-    })()}
+      <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:4px;text-align:right">${goalPct}% 달성</div>
+    </div>
 
-    <!-- 5. Zoom Test -->
-    <div class="sec-label">줌테스트</div>
-    <div class="card" style="padding:0;overflow:hidden">
-      <button onclick="openZoomSheet()" style="width:100%;padding:18px 20px;border:none;background:none;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background=''">
-        <div style="width:44px;height:44px;background:var(--blue-l);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">📹</div>
+    <!-- 7. 줌테스트 (dark glassmorphism) -->
+    <div style="margin:0 16px 12px;padding:0;background:rgba(255,255,255,0.05);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.08);border-radius:20px;overflow:hidden">
+      <button onclick="openZoomSheet()" style="width:100%;padding:18px 20px;border:none;background:none;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left">
+        <div style="width:44px;height:44px;background:rgba(49,130,246,0.15);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">📹</div>
         <div style="flex:1">
-          <div style="font-size:15px;font-weight:700;color:var(--text)">줌 입장 · 상세안내</div>
-          <div style="font-size:12px;color:var(--sub);margin-top:2px">월~금 22:00 ~ 24:00</div>
+          <div style="font-size:15px;font-weight:700;color:#fff">줌 입장 · 상세안내</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:2px">월~금 22:00 ~ 24:00</div>
         </div>
-        <span style="color:var(--hint);font-size:18px;font-weight:300">›</span>
+        <span style="color:rgba(255,255,255,0.3);font-size:18px;font-weight:300">›</span>
       </button>
-      <div style="height:1px;background:var(--divider);margin:0 20px"></div>
-      ${(()=>{
-        const submitted=getThisWeekSurvey();
-        const now=new Date();const isSunAfter10=now.getDay()===0&&now.getHours()>=22;
-        const isOpen=now.getDay()===0?now.getHours()>=22:now.getDay()>=1;
-        return `<button onclick="haptic('tap');surveyState={step:1,curriculum:'',teacher:'',week:'',day:'',name:'',school:'',grade:''};S.scr='survey';S.dir='fwd';R()" style="width:100%;padding:16px 20px;border:none;background:none;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background=''">
-          <div style="width:44px;height:44px;background:${submitted?'var(--green-l)':isSunAfter10?'var(--red-l)':'var(--purple-l)'};border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${submitted?'✅':'📋'}</div>
-          <div style="flex:1">
-            <div style="display:flex;align-items:center;gap:6px">
-              <span style="font-size:15px;font-weight:700;color:var(--text)">줌테스트 스케줄 신청하기</span>
-              ${!submitted&&isOpen?'<span style="width:8px;height:8px;border-radius:50%;background:var(--red);flex-shrink:0"></span>':''}
-            </div>
-            ${submitted
-              ?'<div style="font-size:12px;color:var(--green);margin-top:2px;font-weight:600">신청 완료 · '+esc(submitted.day)+'</div>'
-              :'<div style="font-size:12px;color:var(--sub);margin-top:2px">매주 일요일 22시 오픈 · <span style="color:var(--red);font-weight:600">선착순 마감</span></div>'}
+      <div style="height:1px;background:rgba(255,255,255,0.06);margin:0 20px"></div>
+      <button onclick="haptic('tap');surveyState={step:1,curriculum:'',teacher:'',week:'',day:'',name:'',school:'',grade:''};S.scr='survey';S.dir='fwd';R()" style="width:100%;padding:16px 20px;border:none;background:none;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left">
+        <div style="width:44px;height:44px;background:${submitted?'rgba(0,192,114,0.15)':isSunAfter10?'rgba(240,68,82,0.15)':'rgba(139,92,246,0.15)'};border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${submitted?'✅':'📋'}</div>
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:15px;font-weight:700;color:#fff">줌테스트 스케줄 신청하기</span>
+            ${!submitted&&isOpen?'<span style="width:8px;height:8px;border-radius:50%;background:#F04452;flex-shrink:0"></span>':''}
           </div>
-          <span style="color:var(--hint);font-size:18px;font-weight:300">›</span>
-        </button>`;
-      })()}
-    </div>
-    ${(()=>{
-      const now=new Date();const isSunAfter10=now.getDay()===0&&now.getHours()>=22;
-      const submitted=getThisWeekSurvey();
-      return (isSunAfter10&&!submitted)?'<div style="margin:8px 20px 0;padding:12px 16px;background:var(--red-l);border-radius:var(--r-md);display:flex;align-items:center;gap:10px"><span style="font-size:18px">🚨</span><div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--red)">스케줄 신청이 오픈되었습니다!</div><div style="font-size:11px;color:var(--sub);margin-top:2px">원하는 요일에 테스트보려면 빠르게 신청하세요</div></div></div>':'';
-    })()}
-
-    <!-- 6. 빠른 링크 -->
-    <div class="sec-label">우리 학원</div>
-    <div style="padding:0 20px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <button onclick="window.open('https://engeng.liveklass.com/','_blank')" style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--card);border-radius:var(--r-lg);border:none;cursor:pointer;box-shadow:var(--sh-sm);text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background='var(--card)'">
-        <div style="width:36px;height:36px;background:var(--blue-l);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🎓</div>
-        <div><div style="font-size:13px;font-weight:700;color:var(--text)">수강신청</div><div style="font-size:10px;color:var(--hint);margin-top:1px">LiveKlass</div></div>
-      </button>
-      <button onclick="window.open('http://pf.kakao.com/_xoxoGfG','_blank')" style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--card);border-radius:var(--r-lg);border:none;cursor:pointer;box-shadow:var(--sh-sm);text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background='var(--card)'">
-        <div style="width:36px;height:36px;background:var(--yellow-l);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">💬</div>
-        <div><div style="font-size:13px;font-weight:700;color:var(--text)">카카오톡</div><div style="font-size:10px;color:var(--hint);margin-top:1px">상담하기</div></div>
-      </button>
-      <button onclick="window.open('https://discord.gg/hBgphumrca','_blank')" style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--card);border-radius:var(--r-lg);border:none;cursor:pointer;box-shadow:var(--sh-sm);text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background='var(--card)'">
-        <div style="width:36px;height:36px;background:var(--purple-l);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🎮</div>
-        <div><div style="font-size:13px;font-weight:700;color:var(--text)">디스코드</div><div style="font-size:10px;color:var(--hint);margin-top:1px">커뮤니티</div></div>
-      </button>
-      <button onclick="window.open('https://cafe.naver.com/englishfree2','_blank')" style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--card);border-radius:var(--r-lg);border:none;cursor:pointer;box-shadow:var(--sh-sm);text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background='var(--card)'">
-        <div style="width:36px;height:36px;background:var(--green-l);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">☕</div>
-        <div><div style="font-size:13px;font-weight:700;color:var(--text)">네이버카페</div><div style="font-size:10px;color:var(--hint);margin-top:1px">공지·자료</div></div>
+          ${submitted
+            ?'<div style="font-size:12px;color:#00C072;margin-top:2px;font-weight:600">신청 완료 · '+esc(submitted.day)+'</div>'
+            :'<div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:2px">매주 일요일 22시 오픈 · <span style="color:#F04452;font-weight:600">선착순 마감</span></div>'}
+        </div>
+        <span style="color:rgba(255,255,255,0.3);font-size:18px;font-weight:300">›</span>
       </button>
     </div>
+    ${isSunAfter10&&!submitted?'<div style="margin:0 16px 12px;padding:12px 16px;background:rgba(240,68,82,0.1);border-radius:14px;border:1px solid rgba(240,68,82,0.2);display:flex;align-items:center;gap:10px"><span style="font-size:18px">🚨</span><div style="flex:1"><div style="font-size:13px;font-weight:700;color:#F04452">스케줄 신청이 오픈되었습니다!</div><div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px">원하는 요일에 테스트보려면 빠르게 신청하세요</div></div></div>':''}
 
-    <!-- 7. 입시 뉴스 -->
-    <div class="sec-label">입시 뉴스</div>
-    <div class="card" style="padding:4px 20px" id="newsArea">
-      <div style="text-align:center;padding:16px;font-size:13px;color:var(--hint)">뉴스를 불러오는 중...</div>
-    </div>
-
-    <!-- 7. 내신핏 전환 배너 -->
-    <div class="card" style="padding:16px 20px;margin-top:20px;background:linear-gradient(135deg,#F59E0B 0%,#D97706 100%);border-radius:var(--r-lg);cursor:pointer" onclick="window.open('https://jacob-englishfree.github.io/naesinfit-tests/','_blank')">
+    <!-- 8. 내신핏 배너-->
+    <div style="margin:0 16px 12px;padding:16px 20px;background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(217,119,6,0.1));border-radius:16px;border:1px solid rgba(245,158,11,0.2);cursor:pointer" onclick="window.open('https://jacob-englishfree.github.io/naesinfit-tests/','_blank')">
       <div style="display:flex;align-items:center;gap:14px">
         <div style="font-size:28px">📝</div>
         <div style="flex:1">
-          <div style="font-size:14px;font-weight:800;color:white">내신 기간이라면?</div>
-          <div style="font-size:12px;color:rgba(255,255,255,.8);margin-top:2px">내신핏으로 전환하여 내신 대비하기 →</div>
+          <div style="font-size:14px;font-weight:800;color:#FFD700">내신 기간이라면?</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:2px">내신핏으로 전환하여 내신 대비하기 →</div>
         </div>
       </div>
     </div>
 
-    <!-- 7. Footer -->
-    <div style="text-align:center;padding:24px 20px 12px;font-size:11px;color:var(--hint)">© 영어해방공식 · 온라인 영어학원</div>
+    <!-- Footer -->
+    <div style="text-align:center;padding:24px 20px 12px;font-size:11px;color:rgba(255,255,255,0.25)">© 영어해방공식 · 온라인 영어학원</div>
     <div class="tab-spacer"></div>
   </div>`;
-  setTimeout(renderNewsSection,100);
 }
 
 // ━━ SURVEY (줌 테스트 스케줄 설문) ━━
