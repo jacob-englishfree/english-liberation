@@ -1518,7 +1518,12 @@ function ddayHTML(){
 
 const P=()=>{try{return JSON.parse(localStorage.getItem('el_p'))||{name:'',school:'',grade:''};}catch(e){return{name:'',school:'',grade:''};}};
 let profile=P();
-if(!profile.name.trim())S.scr='login';
+// ?demo=true → 예시 프로필로 바로 대시보드
+if(new URLSearchParams(window.location.search).get('demo')==='true'){
+  profile={name:'김내신',school:'서울고등학교',grade:'고2'};
+  sP(profile);
+  S.scr='home';
+} else if(!profile.name.trim()){S.scr='login';}
 const sP=p=>{profile=p;try{localStorage.setItem('el_p',JSON.stringify(p));}catch(e){}};
 
 // ━━ 관리자 시스템 ━━
