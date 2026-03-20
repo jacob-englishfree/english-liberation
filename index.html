@@ -2040,10 +2040,11 @@ async function fetchSurveyAvail(teacher){
   // 월~금: 이번 주 기준, 토~일: 다음 주 기준
   const now=new Date();const dow=now.getDay();
   const isWeekend=dow===0||dow===6;
-  const monDiff=isWeekend?(dow===0?1:2):(now.getDate()-dow+1);
-  const targetMon=new Date(now.getFullYear(),now.getMonth(),isWeekend?now.getDate()+(dow===0?1:2):monDiff);
+  // 토~일: 다음 주 월요일, 월~금: 이번 주 월요일
+  const daysUntilMon=isWeekend?(dow===0?1:2):(1-dow);
+  const targetMon=new Date(now.getFullYear(),now.getMonth(),now.getDate()+daysUntilMon);
   targetMon.setHours(0,0,0,0);
-  const thisWeekStart=targetMon.toISOString().slice(0,10);
+  const thisWeekStart=targetMon.getFullYear()+'-'+String(targetMon.getMonth()+1).padStart(2,'0')+'-'+String(targetMon.getDate()).padStart(2,'0');
   surveyAvail={unavailable:[],max:9,counts:{},loading:false,daySlots:null};
   try{
     const[schedRes,countRes]=await Promise.all([
