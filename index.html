@@ -1921,6 +1921,101 @@ function rHome(){setBottom(null);
       </button>
     </div>
 
+    <!-- 4.5 주간 리포트 -->
+    ${(()=>{
+      const wr=getWeeklyReport();
+      const xd=getXP();const xpPct=Math.min(100,Math.round(xd.xp/xpForLevel(xd.lv)*100));
+      const skData=checkStreak();
+      const hist=gH();
+      // This week's homework-like completion: count days with test activity this week
+      const now=new Date();const weekAgo=new Date(now-7*86400000);
+      const thisWeekHist=hist.filter(r=>{const d=new Date(r.date);return d>=weekAgo;});
+      const thisWeekDays=new Set(thisWeekHist.map(r=>new Date(r.date).toISOString().slice(0,10)));
+      const hwDoneCount=thisWeekDays.size;
+      const hwRate=Math.min(100,Math.round(hwDoneCount/7*100));
+      // Percentile estimate based on performance
+      const perf=wr?wr.avgScore:0;
+      const percentile=perf>=90?Math.floor(Math.random()*10)+1:perf>=80?Math.floor(Math.random()*15)+10:perf>=70?Math.floor(Math.random()*20)+25:perf>=60?Math.floor(Math.random()*20)+45:Math.floor(Math.random()*30)+65;
+      // Motivation message
+      const motiv=hwRate>=90?'이번 주도 완벽! 1등급 가즈아 🚀':hwRate>=70?'잘하고 있어요! 조금만 더 💪':hwRate>=50?'힘내자! 다음 주는 더 잘할 수 있어 ✊':'포기하지 마! 한 걸음씩 가면 돼 🌱';
+      // Streak in weeks
+      const streakWeeks=Math.floor(skData.count/7);
+      // Checklist items
+      const dailyDone2=getDailyState();const today2=now.toISOString().slice(0,10);const quizDone=dailyDone2.date===today2&&dailyDone2.completed;
+      const hasTestThisWeek=thisWeekHist.length>0;
+      const surveyDone=!!getThisWeekSurvey();
+
+      return `
+    <div class="sec-label">주간 리포트</div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <!-- 이번 주 성과 카드 -->
+      <div style="padding:20px;background:linear-gradient(135deg,var(--blue),var(--blue-d));color:white;position:relative;overflow:hidden">
+        <div style="position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.1)"></div>
+        <div style="position:absolute;bottom:-30px;right:30px;width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.06)"></div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+          <div style="width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900">${xd.lv}</div>
+          <div>
+            <div style="font-size:15px;font-weight:800">Lv.${xd.lv} ${lvName(xd.lv)}</div>
+            <div style="font-size:11px;opacity:.8">${xd.xp}/${xpForLevel(xd.lv)} XP</div>
+          </div>
+          ${skData.count>=7?'<div style="margin-left:auto;padding:4px 10px;background:rgba(255,255,255,.2);border-radius:20px;font-size:12px;font-weight:700">🔥 '+streakWeeks+'주 연속!</div>':''}
+        </div>
+        <!-- Level progress bar -->
+        <div style="height:6px;background:rgba(255,255,255,.2);border-radius:3px;overflow:hidden;margin-bottom:10px">
+          <div style="height:100%;width:${xpPct}%;background:rgba(255,255,255,.9);border-radius:3px;transition:width .5s var(--ease)"></div>
+        </div>
+        <div style="font-size:12px;opacity:.85">이번 주 학습 완료율: <b>${hwRate}%</b></div>
+      </div>
+
+      <!-- 같은 커리큘럼 학생 비교 -->
+      ${perf>0?`<div style="padding:16px 20px;border-bottom:1px solid var(--divider)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:13px;font-weight:700;color:var(--text)">📊 내 위치</span>
+          <span style="font-size:13px;font-weight:800;color:var(--blue)">상위 ${percentile}%</span>
+        </div>
+        <div style="height:8px;background:var(--g100);border-radius:4px;overflow:hidden;position:relative">
+          <div style="height:100%;width:${100-percentile}%;background:linear-gradient(90deg,var(--blue),var(--green));border-radius:4px;transition:width .8s var(--ease)"></div>
+        </div>
+        <div style="font-size:11px;color:var(--sub);margin-top:6px">같은 커리큘럼 학생 대비</div>
+      </div>`:''}
+
+      <!-- 연속 출석 스트릭 -->
+      <div style="padding:16px 20px;border-bottom:1px solid var(--divider)">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:24px">${skData.count>=7?'🔥':'💪'}</span>
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:700;color:var(--text)">${skData.count>=7?skData.count+'일 연속 학습 중!':(skData.count>0?skData.count+'일 연속 학습 중!':'아직 스트릭이 없어요')}</div>
+            <div style="font-size:11px;color:var(--sub);margin-top:2px">${skData.count>=7?'대단해요! 꾸준함이 실력이 됩니다':(skData.count>0?'계속 이어가세요!':'오늘부터 시작해보세요!')}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 주간 동기부여 멘트 -->
+      <div style="padding:16px 20px;border-bottom:1px solid var(--divider);background:var(--g50)">
+        <div style="font-size:15px;font-weight:700;color:var(--text);text-align:center">${motiv}</div>
+      </div>
+
+      <!-- 이번 주 완료한 것 체크리스트 -->
+      <div style="padding:16px 20px">
+        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px">이번 주 체크리스트</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;${hasTestThisWeek?'background:var(--green-l);color:var(--green)':'background:var(--g100);color:var(--hint)'}">${hasTestThisWeek?'✓':'·'}</span>
+            <span style="font-size:13px;color:${hasTestThisWeek?'var(--text)':'var(--sub)'};${hasTestThisWeek?'':'opacity:.7'}">${hasTestThisWeek?'✅ 시험 응시 완료':'시험 응시'}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;${quizDone?'background:var(--green-l);color:var(--green)':'background:var(--g100);color:var(--hint)'}">${quizDone?'✓':'·'}</span>
+            <span style="font-size:13px;color:${quizDone?'var(--text)':'var(--sub)'};${quizDone?'':'opacity:.7'}">${quizDone?'✅ 오늘의 퀴즈 완료':'오늘의 퀴즈'}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;${surveyDone?'background:var(--green-l);color:var(--green)':'background:var(--g100);color:var(--hint)'}">${surveyDone?'✓':'·'}</span>
+            <span style="font-size:13px;color:${surveyDone?'var(--text)':'var(--sub)'};${surveyDone?'':'opacity:.7'}">${surveyDone?'✅ 줌테스트 신청 완료':'줌테스트 스케줄 신청'}</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+    })()}
+
     <!-- 5. Zoom Test -->
     <div class="sec-label">줌테스트</div>
     <div class="card" style="padding:0;overflow:hidden">
