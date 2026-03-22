@@ -1568,7 +1568,7 @@ function animateScore(target){
 }
 
 function setBottom(html){const b=$('bottomBar');if(!html){b.style.display='none';b.innerHTML='';return;}b.innerHTML=html;b.style.display='';}
-function R(){({login:rLogin,home:rHome,learn:rLearn,record:rRecord,my:rMy,select:rSel,settings:rSet,exam:rExam,result:rResult,speedquiz:rSpeedQuiz,flashcard:rFlashcard,runnergame:rRunnerGame,survey:rSurvey,zoomprep:rZoomPrep}[S.scr]||rLogin)();
+function R(){({login:rLogin,home:rHome,learn:rLearn,record:rRecord,my:rMy,select:rSel,settings:rSet,exam:rExam,result:rResult,speedquiz:rSpeedQuiz,flashcard:rFlashcard,runnergame:rRunnerGame,survey:rSurvey,zoomprep:rZoomPrep,zoomhub:rZoomHub}[S.scr]||rLogin)();
   // Apply page transition direction
   const pg=app.querySelector('.page');if(pg&&S.dir){pg.classList.remove('slide-left','slide-right','tab-swap');if(S.dir==='back')pg.classList.add('slide-right');else if(S.dir==='fwd')pg.classList.add('slide-left');else if(S.dir==='tab')pg.classList.add('tab-swap');}S.dir='fwd';
   // Tab bar visibility
@@ -1833,6 +1833,122 @@ function getWarnings(){try{return JSON.parse(localStorage.getItem('el_warnings')
 function saveWarnings(w){try{localStorage.setItem('el_warnings',JSON.stringify(w));}catch(e){}}
 
 // ━━ HOME (핵심 액션만) ━━
+function rZoomHub(){setBottom(null);
+  if(!profile.name.trim()){S.scr='login';R();return;}
+  const submitted=getThisWeekSurvey();
+  const zoomTab=S._zoomHubTab||'practice';
+
+  const curricula=[
+    {name:'이미지독해',color:'#7C3AED',bg:'#EDE9FE',totalWeeks:8,currentWeek:2,
+     weeks:[{w:1,title:'환언의 원리',url:''},{w:2,title:'+/-가 문장을 결정한다',url:'https://yhg-admin.vercel.app/tests/image-reading/week2/test.html'},{w:3,title:'3주차',url:''},{w:4,title:'4주차',url:''},{w:5,title:'5주차',url:''},{w:6,title:'6주차',url:''},{w:7,title:'7주차',url:''},{w:8,title:'8주차',url:''}]},
+    {name:'내신의기술',color:'#3182F6',bg:'#EBF4FF',totalWeeks:4,currentWeek:3,
+     weeks:[{w:1,title:'1주차',url:''},{w:2,title:'2주차',url:''},{w:3,title:'분사 완전 정복',url:'https://yhg-admin.vercel.app/tests/naesinfit-tech/week3/test.html'},{w:4,title:'4주차',url:''}]},
+    {name:'정규반',color:'#16A34A',bg:'#E8F5E9',totalWeeks:null,currentWeek:13,weeks:[]}
+  ];
+
+  app.innerHTML=`<div class="page">
+    <!-- 헤더 -->
+    <div style="padding:16px 20px;display:flex;align-items:center;gap:12px">
+      <button onclick="S.scr='home';S.dir='back';R()" style="width:36px;height:36px;border:none;background:var(--g50);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px">←</button>
+      <div class="t-heading" style="font-size:20px">줌테스트</div>
+    </div>
+
+    <!-- 스케줄 현황 -->
+    <div style="padding:0 20px;margin-bottom:16px">
+      <div style="padding:14px 16px;background:var(--card);border-radius:var(--r-lg);box-shadow:var(--sh-sm);display:flex;align-items:center;gap:12px">
+        <span style="font-size:20px">${submitted?'✅':'📋'}</span>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700;color:var(--text)">${submitted?'이번 주 스케줄 신청 완료':'스케줄 미신청'}</div>
+          <div style="font-size:12px;color:${submitted?'var(--green)':'var(--red)'};margin-top:1px;font-weight:600">${submitted?esc(submitted.day):'일요일 22시에 신청하세요'}</div>
+        </div>
+        <button onclick="haptic('tap');surveyState={step:1,curriculum:'',teacher:'',week:'',day:'',name:'',school:'',grade:''};S.scr='survey';S.dir='fwd';R()" style="padding:8px 14px;border:1.5px solid var(--border);border-radius:var(--r-md);background:none;font-size:12px;font-weight:700;color:var(--text);cursor:pointer">${submitted?'변경':'신청'}</button>
+      </div>
+    </div>
+
+    <!-- 탭: 연습 / 실전 -->
+    <div style="padding:0 20px;margin-bottom:16px">
+      <div style="display:flex;gap:8px">
+        <button onclick="S._zoomHubTab='practice';R()" style="flex:1;padding:12px;border:none;border-radius:var(--r-md);font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;${zoomTab==='practice'?'background:var(--blue);color:white;box-shadow:0 4px 12px rgba(49,130,246,.3)':'background:var(--g50);color:var(--sub)'}">📝 연습 모드</button>
+        <button onclick="S._zoomHubTab='real';R()" style="flex:1;padding:12px;border:none;border-radius:var(--r-md);font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;${zoomTab==='real'?'background:var(--red);color:white;box-shadow:0 4px 12px rgba(240,68,82,.3)':'background:var(--g50);color:var(--sub)'}">📹 실전 모드</button>
+      </div>
+    </div>
+
+    ${zoomTab==='practice'?`
+    <!-- 연습 모드 -->
+    <div style="padding:0 20px">
+      <div style="font-size:12px;color:var(--sub);margin-bottom:12px;padding:0 4px">혼자 미리 풀어보기 · 기록되지 않음</div>
+      ${curricula.map(c=>{
+        return '<div style="background:var(--card);border-radius:var(--r-lg);box-shadow:var(--sh-sm);margin-bottom:12px;overflow:hidden">'+
+          '<div style="padding:14px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--divider)">'+
+            '<span style="font-size:10px;font-weight:800;color:'+c.color+';background:'+c.bg+';padding:3px 10px;border-radius:10px">'+c.name+'</span>'+
+            (c.totalWeeks?'<span style="font-size:11px;color:var(--hint)">'+c.currentWeek+'/'+c.totalWeeks+'주차</span>':'<span style="font-size:11px;color:var(--hint)">'+c.currentWeek+'주차</span>')+
+          '</div>'+
+          (c.weeks.length>0?c.weeks.map(wk=>{
+            const isCurrent=wk.w===c.currentWeek;
+            const hasTest=!!wk.url;
+            const isPast=wk.w<c.currentWeek;
+            const isFuture=wk.w>c.currentWeek;
+            return '<button onclick="'+(hasTest?"window.open('"+wk.url+"','_blank')":"toast('아직 준비 중인 테스트입니다')")+'" style="width:100%;padding:12px 16px;border:none;background:'+(isCurrent?'var(--blue-xl)':'none')+';display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;border-bottom:1px solid var(--divider);transition:background .15s;'+(isFuture&&!hasTest?'opacity:0.4':'')+'" ontouchstart="this.style.background=\'var(--g50)\'" ontouchend="this.style.background=\''+(isCurrent?'var(--blue-xl)':'')+'\'">'+
+              '<div style="width:28px;height:28px;border-radius:50%;background:'+(isCurrent?c.color:isPast?'var(--green)':'var(--g200)')+';display:flex;align-items:center;justify-content:center;color:white;font-size:12px;font-weight:800;flex-shrink:0">'+(isPast?'✓':wk.w)+'</div>'+
+              '<div style="flex:1;min-width:0">'+
+                '<div style="font-size:13px;font-weight:'+(isCurrent?'800':'600')+';color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+wk.w+'주차 · '+wk.title+'</div>'+
+                (isCurrent?'<div style="font-size:11px;color:'+c.color+';font-weight:700;margin-top:1px">★ 이번 주!</div>':'')+
+              '</div>'+
+              (hasTest?'<span style="font-size:10px;font-weight:700;color:var(--green);background:var(--green-l);padding:2px 8px;border-radius:8px">응시</span>':'<span style="font-size:10px;color:var(--hint)">준비 중</span>')+
+            '</button>';
+          }).join(''):'<div style="padding:20px;text-align:center;font-size:13px;color:var(--hint)">주차별 테스트 준비 중</div>')+
+        '</div>';
+      }).join('')}
+    </div>
+    `:`
+    <!-- 실전 모드 -->
+    <div style="padding:0 20px">
+      <div style="font-size:12px;color:var(--sub);margin-bottom:12px;padding:0 4px">줌 입장 후 선생님 감독 하에 테스트 · 점수 기록됨</div>
+
+      <!-- 줌 입장 -->
+      <div style="background:var(--card);border-radius:var(--r-lg);box-shadow:var(--sh-sm);margin-bottom:12px;overflow:hidden">
+        <button onclick="window.open('https://us06web.zoom.us/j/8984103223?pwd=CWrLZH59bc4rROlHEhDEyFFLXYrnrv.1','_blank')" style="width:100%;padding:20px;border:none;background:linear-gradient(135deg,#3182F6,#1B64DA);border-radius:var(--r-lg);display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left">
+          <div style="width:48px;height:48px;background:rgba(255,255,255,.2);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">📹</div>
+          <div style="flex:1">
+            <div style="font-size:16px;font-weight:800;color:white">줌 입장하기</div>
+            <div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:2px">카메라 반드시 ON · 비번 9999</div>
+          </div>
+          <span style="color:rgba(255,255,255,.5);font-size:20px">›</span>
+        </button>
+      </div>
+
+      <!-- 실전 테스트 시작 -->
+      <div style="background:var(--card);border-radius:var(--r-lg);box-shadow:var(--sh-sm);padding:20px;margin-bottom:12px">
+        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">줌 입장 후 테스트 시작</div>
+        <div style="font-size:12px;color:var(--sub);margin-bottom:16px">줌에 입장한 뒤, 선생님 지시에 따라 아래 테스트를 시작하세요</div>
+        ${curricula.filter(c=>c.weeks.some(w=>w.w===c.currentWeek&&w.url)).map(c=>{
+          const wk=c.weeks.find(w=>w.w===c.currentWeek);
+          return '<button onclick="window.open(\''+wk.url+'\',\'_blank\')" style="width:100%;padding:14px 16px;border:2px solid '+c.color+';border-radius:var(--r-md);background:'+c.bg+';display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;margin-bottom:8px">'+
+            '<div style="width:32px;height:32px;border-radius:50%;background:'+c.color+';display:flex;align-items:center;justify-content:center;color:white;font-size:14px;font-weight:900;flex-shrink:0">'+c.currentWeek+'</div>'+
+            '<div style="flex:1">'+
+              '<div style="font-size:14px;font-weight:700;color:var(--text)">'+c.name+' '+c.currentWeek+'주차</div>'+
+              '<div style="font-size:12px;color:'+c.color+';font-weight:600;margin-top:1px">'+wk.title+'</div>'+
+            '</div>'+
+            '<span style="font-size:10px;font-weight:800;color:white;background:var(--red);padding:3px 10px;border-radius:10px">실전</span>'+
+          '</button>';
+        }).join('')}
+      </div>
+
+      <!-- 안내 -->
+      <div style="padding:14px 16px;background:var(--blue-xl);border-radius:var(--r-md)">
+        <div style="font-size:12px;color:var(--blue);font-weight:700;margin-bottom:4px">📌 실전 모드 안내</div>
+        <div style="font-size:11px;color:var(--sub);line-height:1.6">
+          1. 줌 입장 (카메라 ON)<br>
+          2. 선생님이 "시작" 하면 테스트 클릭<br>
+          3. 앱에서 테스트 풀기<br>
+          4. 제출 → 점수 확인
+        </div>
+      </div>
+    </div>
+    `}
+  </div>`;
+}
+
 function rHome(){setBottom(null);
   if(!profile.name.trim()){S.scr='login';R();return;}
 
@@ -1891,85 +2007,18 @@ function rHome(){setBottom(null);
       </div>
     </div>
 
-    <!-- 5. 줌테스트 통합 메뉴 -->
+    <!-- 5. 줌테스트 -->
     <div class="sec-label">줌테스트</div>
     <div class="card" style="padding:0;overflow:hidden">
-      <!-- 연습하기 -->
-      <button onclick="S._zoomTab='practice';R()" style="width:100%;padding:18px 20px;border:none;background:none;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background=''">
-        <div style="width:44px;height:44px;background:var(--purple-l);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">📝</div>
+      <button onclick="S.scr='zoomhub';S.dir='fwd';R()" style="width:100%;padding:18px 20px;border:none;background:none;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background=''">
+        <div style="width:44px;height:44px;background:var(--blue-l);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">📝</div>
         <div style="flex:1">
-          <div style="font-size:15px;font-weight:700;color:var(--text)">연습하기</div>
-          <div style="font-size:12px;color:var(--sub);margin-top:2px">커리큘럼별 주차 테스트 연습</div>
+          <div style="font-size:15px;font-weight:700;color:var(--text)">줌테스트</div>
+          <div style="font-size:12px;color:var(--sub);margin-top:2px">연습 · 실전 · 스케줄 신청</div>
         </div>
         <span style="color:var(--hint);font-size:18px;font-weight:300">›</span>
       </button>
-      <div style="height:1px;background:var(--divider);margin:0 20px"></div>
-      <!-- 줌 입장 -->
-      <button onclick="openZoomSheet()" style="width:100%;padding:18px 20px;border:none;background:none;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background=''">
-        <div style="width:44px;height:44px;background:var(--blue-l);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">📹</div>
-        <div style="flex:1">
-          <div style="font-size:15px;font-weight:700;color:var(--text)">줌 입장</div>
-          <div style="font-size:12px;color:var(--sub);margin-top:2px">월~금 22:00 ~ 24:00</div>
-        </div>
-        <span style="color:var(--hint);font-size:18px;font-weight:300">›</span>
-      </button>
-      <div style="height:1px;background:var(--divider);margin:0 20px"></div>
-      <!-- 스케줄 신청 -->
-      ${(()=>{
-        const submitted=getThisWeekSurvey();
-        const now=new Date();const isSunAfter10=now.getDay()===0&&now.getHours()>=22;
-        const isOpen=now.getDay()===0?now.getHours()>=22:now.getDay()>=1;
-        return `<button onclick="haptic('tap');surveyState={step:1,curriculum:'',teacher:'',week:'',day:'',name:'',school:'',grade:''};S.scr='survey';S.dir='fwd';R()" style="width:100%;padding:16px 20px;border:none;background:none;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background=''">
-          <div style="width:44px;height:44px;background:${submitted?'var(--green-l)':isSunAfter10?'var(--red-l)':'var(--purple-l)'};border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${submitted?'✅':'📋'}</div>
-          <div style="flex:1">
-            <div style="font-size:15px;font-weight:700;color:var(--text)">스케줄 신청</div>
-            ${submitted
-              ?'<div style="font-size:12px;color:var(--green);margin-top:2px;font-weight:600">신청 완료 · '+esc(submitted.day)+'</div>'
-              :'<div style="font-size:12px;color:var(--sub);margin-top:2px">매주 일요일 22시 오픈 · <span style="color:var(--red);font-weight:600">선착순</span></div>'}
-          </div>
-          <span style="color:var(--hint);font-size:18px;font-weight:300">›</span>
-        </button>`;
-      })()}
     </div>
-
-    <!-- 연습하기 펼침 패널 -->
-    ${S._zoomTab==='practice'?`
-    <div style="padding:0 20px;margin-top:8px">
-      ${(()=>{
-        const curricula=[
-          {name:'이미지독해',color:'var(--purple)',bg:'var(--purple-l)',totalWeeks:8,currentWeek:2,
-           weeks:[{w:1,title:'환언의 원리',url:''},{w:2,title:'+/-가 문장을 결정한다',url:'https://yhg-admin.vercel.app/tests/image-reading/week2/test.html'},{w:3,title:'3주차',url:''},{w:4,title:'4주차',url:''},{w:5,title:'5주차',url:''},{w:6,title:'6주차',url:''},{w:7,title:'7주차',url:''},{w:8,title:'8주차',url:''}]},
-          {name:'내신의기술',color:'var(--blue)',bg:'var(--blue-l)',totalWeeks:4,currentWeek:3,
-           weeks:[{w:1,title:'1주차',url:''},{w:2,title:'2주차',url:''},{w:3,title:'분사(Participle) 완전 정복',url:'https://yhg-admin.vercel.app/tests/naesinfit-tech/week3/test.html'},{w:4,title:'4주차',url:''}]},
-          {name:'정규반',color:'var(--green)',bg:'var(--green-l)',totalWeeks:null,currentWeek:13,
-           weeks:[]}
-        ];
-        return curricula.map(c=>{
-          return '<div style="background:var(--card);border-radius:var(--r-lg);box-shadow:var(--sh-sm);margin-bottom:10px;overflow:hidden">'+
-            '<div style="padding:14px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--divider)">'+
-              '<span style="font-size:10px;font-weight:800;color:'+c.color+';background:'+c.bg+';padding:3px 10px;border-radius:10px">'+c.name+'</span>'+
-              (c.totalWeeks?'<span style="font-size:11px;color:var(--hint)">'+c.currentWeek+'/'+c.totalWeeks+'주차</span>':'<span style="font-size:11px;color:var(--hint)">'+c.currentWeek+'주차</span>')+
-            '</div>'+
-            (c.weeks.length>0?c.weeks.map(wk=>{
-              const isCurrent=wk.w===c.currentWeek;
-              const hasTest=!!wk.url;
-              const isPast=wk.w<c.currentWeek;
-              const isFuture=wk.w>c.currentWeek;
-              return '<button onclick="'+(hasTest?"window.open('"+wk.url+"','_blank')":"toast('아직 준비 중인 테스트입니다')")+'" style="width:100%;padding:12px 16px;border:none;background:'+(isCurrent?'var(--blue-xl)':'none')+';display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;border-bottom:1px solid var(--divider);transition:background .15s;'+(isFuture&&!hasTest?'opacity:0.4':'')+'" ontouchstart="this.style.background=\'var(--g50)\'" ontouchend="this.style.background=\''+(isCurrent?'var(--blue-xl)':'')+'\'">'+
-                '<div style="width:28px;height:28px;border-radius:50%;background:'+(isCurrent?c.color:isPast?'var(--green)':'var(--g200)')+';display:flex;align-items:center;justify-content:center;color:white;font-size:12px;font-weight:800;flex-shrink:0">'+(isPast?'✓':wk.w)+'</div>'+
-                '<div style="flex:1;min-width:0">'+
-                  '<div style="font-size:13px;font-weight:'+(isCurrent?'800':'600')+';color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+wk.w+'주차 · '+wk.title+'</div>'+
-                  (isCurrent?'<div style="font-size:11px;color:'+c.color+';font-weight:700;margin-top:1px">★ 이번 주 테스트!</div>':'')+
-                '</div>'+
-                (hasTest?'<span style="font-size:10px;font-weight:700;color:var(--green);background:var(--green-l);padding:2px 8px;border-radius:8px">응시 가능</span>':'<span style="font-size:10px;color:var(--hint)">준비 중</span>')+
-              '</button>';
-            }).join(''):'<div style="padding:16px;text-align:center;font-size:13px;color:var(--hint)">주차별 테스트 준비 중</div>')+
-          '</div>';
-        }).join('');
-      })()}
-      <button onclick="S._zoomTab=null;R()" style="width:100%;padding:10px;border:none;background:none;color:var(--hint);font-size:13px;cursor:pointer;font-weight:600">접기 ▲</button>
-    </div>`:''}
-
     ${(()=>{
       const now=new Date();const isSunAfter10=now.getDay()===0&&now.getHours()>=22;
       const submitted=getThisWeekSurvey();
