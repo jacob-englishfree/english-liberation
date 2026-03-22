@@ -1921,7 +1921,38 @@ function rHome(){setBottom(null);
       </button>
     </div>
 
-    <!-- 5. Zoom Test -->
+    <!-- 5. 커리큘럼 테스트 -->
+    <div class="sec-label">이번 주 테스트</div>
+    <div style="padding:0 20px;display:flex;flex-direction:column;gap:10px;margin-bottom:8px">
+      ${(()=>{
+        const tests=[
+          {curriculum:'이미지독해',week:2,title:'+/-가 문장을 결정한다',questions:20,time:25,url:'https://yhg-admin.vercel.app/tests/image-reading/week2/test.html'},
+          {curriculum:'내신의기술',week:3,title:'분사(Participle) 완전 정복',questions:20,time:20,url:'https://yhg-admin.vercel.app/tests/naesinfit-tech/week3/test.html'}
+        ];
+        const colors={이미지독해:'var(--purple)',내신의기술:'var(--blue)',정규반:'var(--green)'};
+        const bgColors={이미지독해:'var(--purple-l)',내신의기술:'var(--blue-l)',정규반:'var(--green-l)'};
+        return tests.map(t=>{
+          const hk='curTest_'+t.curriculum+'_'+t.week;
+          const prev=localStorage.getItem(hk);
+          return `<button onclick="window.open('${t.url}','_blank')" style="width:100%;padding:16px 18px;background:var(--card);border-radius:var(--r-lg);border:none;cursor:pointer;box-shadow:var(--sh-sm);text-align:left;display:flex;align-items:center;gap:14px;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background='var(--card)'">
+            <div style="width:48px;height:48px;background:${bgColors[t.curriculum]||'var(--blue-l)'};border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <span style="font-size:22px">📝</span>
+            </div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+                <span style="font-size:10px;font-weight:800;color:${colors[t.curriculum]||'var(--blue)'};background:${bgColors[t.curriculum]||'var(--blue-l)'};padding:2px 8px;border-radius:10px">${t.curriculum}</span>
+                <span style="font-size:11px;color:var(--hint)">${t.week}주차</span>
+              </div>
+              <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.title}</div>
+              <div style="font-size:11px;color:var(--sub)">${t.questions}문항 · ${t.time}분 · 80점 통과</div>
+            </div>
+            <span style="color:var(--hint);font-size:18px;font-weight:300">›</span>
+          </button>`;
+        }).join('');
+      })()}
+    </div>
+
+    <!-- 6. Zoom Test -->
     <div class="sec-label">줌테스트</div>
     <div class="card" style="padding:0;overflow:hidden">
       <button onclick="openZoomSheet()" style="width:100%;padding:18px 20px;border:none;background:none;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background=''">
