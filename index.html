@@ -1878,17 +1878,22 @@ function rZoomHub(){setBottom(null);
     <div style="padding:0 20px">
       <div style="font-size:12px;color:var(--sub);margin-bottom:12px;padding:0 4px">혼자 미리 풀어보기 · 기록되지 않음</div>
       ${curricula.map(c=>{
+        const isOpen=S._openCur===c.name;
         return '<div style="background:var(--card);border-radius:var(--r-lg);box-shadow:var(--sh-sm);margin-bottom:12px;overflow:hidden">'+
-          '<div style="padding:14px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--divider)">'+
-            '<span style="font-size:10px;font-weight:800;color:'+c.color+';background:'+c.bg+';padding:3px 10px;border-radius:10px">'+c.name+'</span>'+
-            (c.totalWeeks?'<span style="font-size:11px;color:var(--hint)">'+c.currentWeek+'/'+c.totalWeeks+'주차</span>':'<span style="font-size:11px;color:var(--hint)">'+c.currentWeek+'주차</span>')+
-          '</div>'+
-          (c.weeks.length>0?c.weeks.map(wk=>{
+          '<button onclick="S._openCur=S._openCur===\''+c.name+'\'?null:\''+c.name+'\';R()" style="width:100%;padding:16px 18px;border:none;background:none;display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;transition:background .15s" ontouchstart="this.style.background=\'var(--g50)\'" ontouchend="this.style.background=\'\'">'+
+            '<div style="width:40px;height:40px;background:'+c.bg+';border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📚</div>'+
+            '<div style="flex:1">'+
+              '<div style="font-size:15px;font-weight:700;color:var(--text)">'+c.name+'</div>'+
+              '<div style="font-size:12px;color:var(--sub);margin-top:1px">'+(c.totalWeeks?c.currentWeek+'/'+c.totalWeeks+'주차':c.currentWeek+'주차')+' · ★ '+c.currentWeek+'주차 진행 중</div>'+
+            '</div>'+
+            '<span style="color:var(--hint);font-size:14px;transition:transform .2s;transform:rotate('+(isOpen?'180':'0')+'deg)">▼</span>'+
+          '</button>'+
+          (isOpen?(c.weeks.length>0?c.weeks.map(wk=>{
             const isCurrent=wk.w===c.currentWeek;
             const hasTest=!!wk.url;
             const isPast=wk.w<c.currentWeek;
             const isFuture=wk.w>c.currentWeek;
-            return '<button onclick="'+(hasTest?"window.open('"+wk.url+"','_blank')":"toast('아직 준비 중인 테스트입니다')")+'" style="width:100%;padding:12px 16px;border:none;background:'+(isCurrent?'var(--blue-xl)':'none')+';display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;border-bottom:1px solid var(--divider);transition:background .15s;'+(isFuture&&!hasTest?'opacity:0.4':'')+'" ontouchstart="this.style.background=\'var(--g50)\'" ontouchend="this.style.background=\''+(isCurrent?'var(--blue-xl)':'')+'\'">'+
+            return '<button onclick="'+(hasTest?"window.open('"+wk.url+"','_blank')":"toast('아직 준비 중인 테스트입니다')")+'" style="width:100%;padding:12px 16px;border:none;background:'+(isCurrent?'var(--blue-xl)':'none')+';display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;border-top:1px solid var(--divider);transition:background .15s;'+(isFuture&&!hasTest?'opacity:0.4':'')+'" ontouchstart="this.style.background=\'var(--g50)\'" ontouchend="this.style.background=\''+(isCurrent?'var(--blue-xl)':'')+'\'">'+
               '<div style="width:28px;height:28px;border-radius:50%;background:'+(isCurrent?c.color:isPast?'var(--green)':'var(--g200)')+';display:flex;align-items:center;justify-content:center;color:white;font-size:12px;font-weight:800;flex-shrink:0">'+(isPast?'✓':wk.w)+'</div>'+
               '<div style="flex:1;min-width:0">'+
                 '<div style="font-size:13px;font-weight:'+(isCurrent?'800':'600')+';color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+wk.w+'주차 · '+wk.title+'</div>'+
@@ -1896,7 +1901,7 @@ function rZoomHub(){setBottom(null);
               '</div>'+
               (hasTest?'<span style="font-size:10px;font-weight:700;color:var(--green);background:var(--green-l);padding:2px 8px;border-radius:8px">응시</span>':'<span style="font-size:10px;color:var(--hint)">준비 중</span>')+
             '</button>';
-          }).join(''):'<div style="padding:20px;text-align:center;font-size:13px;color:var(--hint)">주차별 테스트 준비 중</div>')+
+          }).join(''):'<div style="padding:20px;text-align:center;font-size:13px;color:var(--hint);border-top:1px solid var(--divider)">주차별 테스트 준비 중</div>'):'')+
         '</div>';
       }).join('')}
     </div>
@@ -1917,20 +1922,36 @@ function rZoomHub(){setBottom(null);
         </button>
       </div>
 
-      <!-- 실전 테스트 시작 -->
-      <div style="background:var(--card);border-radius:var(--r-lg);box-shadow:var(--sh-sm);padding:20px;margin-bottom:12px">
-        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">줌 입장 후 테스트 시작</div>
-        <div style="font-size:12px;color:var(--sub);margin-bottom:16px">줌에 입장한 뒤, 선생님 지시에 따라 아래 테스트를 시작하세요</div>
-        ${curricula.filter(c=>c.weeks.some(w=>w.w===c.currentWeek&&w.url)).map(c=>{
-          const wk=c.weeks.find(w=>w.w===c.currentWeek);
-          return '<button onclick="window.open(\''+wk.url+'\',\'_blank\')" style="width:100%;padding:14px 16px;border:2px solid '+c.color+';border-radius:var(--r-md);background:'+c.bg+';display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;margin-bottom:8px">'+
-            '<div style="width:32px;height:32px;border-radius:50%;background:'+c.color+';display:flex;align-items:center;justify-content:center;color:white;font-size:14px;font-weight:900;flex-shrink:0">'+c.currentWeek+'</div>'+
-            '<div style="flex:1">'+
-              '<div style="font-size:14px;font-weight:700;color:var(--text)">'+c.name+' '+c.currentWeek+'주차</div>'+
-              '<div style="font-size:12px;color:'+c.color+';font-weight:600;margin-top:1px">'+wk.title+'</div>'+
-            '</div>'+
-            '<span style="font-size:10px;font-weight:800;color:white;background:var(--red);padding:3px 10px;border-radius:10px">실전</span>'+
-          '</button>';
+      <!-- 실전 테스트 시작 (아코디언) -->
+      <div style="margin-bottom:12px">
+        <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;padding:0 4px">줌 입장 후 테스트 시작</div>
+        <div style="font-size:12px;color:var(--sub);margin-bottom:12px;padding:0 4px">줌에 입장한 뒤, 선생님 지시에 따라 커리큘럼·주차를 선택하세요</div>
+        ${curricula.map(c=>{
+          const isOpen=S._openCurReal===c.name;
+          return '<div style="background:var(--card);border-radius:var(--r-lg);box-shadow:var(--sh-sm);margin-bottom:10px;overflow:hidden">'+
+            '<button onclick="S._openCurReal=S._openCurReal===\''+c.name+'\'?null:\''+c.name+'\';R()" style="width:100%;padding:16px 18px;border:none;background:none;display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;transition:background .15s" ontouchstart="this.style.background=\'var(--g50)\'" ontouchend="this.style.background=\'\'">'+
+              '<div style="width:40px;height:40px;background:'+c.bg+';border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📚</div>'+
+              '<div style="flex:1">'+
+                '<div style="font-size:15px;font-weight:700;color:var(--text)">'+c.name+'</div>'+
+                '<div style="font-size:12px;color:var(--sub);margin-top:1px">'+(c.totalWeeks?c.currentWeek+'/'+c.totalWeeks+'주차':c.currentWeek+'주차')+'</div>'+
+              '</div>'+
+              '<span style="color:var(--hint);font-size:14px;transition:transform .2s;transform:rotate('+(isOpen?'180':'0')+'deg)">▼</span>'+
+            '</button>'+
+            (isOpen?(c.weeks.length>0?c.weeks.map(wk=>{
+              const isCurrent=wk.w===c.currentWeek;
+              const hasTest=!!wk.url;
+              const isPast=wk.w<c.currentWeek;
+              const isFuture=wk.w>c.currentWeek;
+              return '<button onclick="'+(hasTest?"window.open('"+wk.url+"','_blank')":"toast('아직 준비 중인 테스트입니다')")+'" style="width:100%;padding:12px 16px;border:none;background:'+(isCurrent?'var(--red-l)':'none')+';display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;border-top:1px solid var(--divider);transition:background .15s;'+(isFuture&&!hasTest?'opacity:0.4':'')+'" ontouchstart="this.style.background=\'var(--g50)\'" ontouchend="this.style.background=\''+(isCurrent?'var(--red-l)':'')+'\'">'+
+                '<div style="width:28px;height:28px;border-radius:50%;background:'+(isCurrent?'var(--red)':isPast?'var(--green)':'var(--g200)')+';display:flex;align-items:center;justify-content:center;color:white;font-size:12px;font-weight:800;flex-shrink:0">'+(isPast?'✓':wk.w)+'</div>'+
+                '<div style="flex:1;min-width:0">'+
+                  '<div style="font-size:13px;font-weight:'+(isCurrent?'800':'600')+';color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+wk.w+'주차 · '+wk.title+'</div>'+
+                  (isCurrent?'<div style="font-size:11px;color:var(--red);font-weight:700;margin-top:1px">★ 이번 주 실전!</div>':'')+
+                '</div>'+
+                (hasTest?'<span style="font-size:10px;font-weight:800;color:white;background:var(--red);padding:2px 8px;border-radius:8px">실전</span>':'<span style="font-size:10px;color:var(--hint)">준비 중</span>')+
+              '</button>';
+            }).join(''):'<div style="padding:20px;text-align:center;font-size:13px;color:var(--hint);border-top:1px solid var(--divider)">주차별 테스트 준비 중</div>'):'')+
+          '</div>';
         }).join('')}
       </div>
 
