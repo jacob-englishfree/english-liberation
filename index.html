@@ -2517,20 +2517,7 @@ function rHome(){setBottom(null);
       </div>
     </div>
 
-    <!-- 5. 줌테스트 -->
-    <div class="sec-label">줌테스트</div>
-    <div class="card" style="padding:0;overflow:hidden">
-      <button onclick="S.scr='zoomhub';S.dir='fwd';R()" style="width:100%;padding:18px 20px;border:none;background:none;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background=''">
-        <div style="width:44px;height:44px;background:var(--blue-l);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">📝</div>
-        <div style="flex:1">
-          <div style="font-size:15px;font-weight:700;color:var(--text)">줌테스트</div>
-          <div style="font-size:12px;color:var(--sub);margin-top:2px">연습 · 실전 · 스케줄 신청</div>
-        </div>
-        <span style="color:var(--hint);font-size:18px;font-weight:300">›</span>
-      </button>
-    </div>
-
-    <!-- 5.5 단어테스트 -->
+    <!-- 5. 단어테스트 (최우선) -->
     <div class="sec-label">단어테스트</div>
     <div class="card" style="padding:0;overflow:hidden">
       <button onclick="location.href='vocab.html'" style="width:100%;padding:18px 20px;border:none;background:none;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background=''">
@@ -2538,6 +2525,19 @@ function rHome(){setBottom(null);
         <div style="flex:1">
           <div style="font-size:15px;font-weight:700;color:var(--text)">단어테스트</div>
           <div style="font-size:12px;color:var(--sub);margin-top:2px">고단끝 · 8종 학습모드 · 플래시카드</div>
+        </div>
+        <span style="color:var(--hint);font-size:18px;font-weight:300">›</span>
+      </button>
+    </div>
+
+    <!-- 5.5 줌테스트 -->
+    <div class="sec-label">줌테스트</div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <button onclick="S.scr='zoomhub';S.dir='fwd';R()" style="width:100%;padding:18px 20px;border:none;background:none;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background=''">
+        <div style="width:44px;height:44px;background:var(--blue-l);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">📝</div>
+        <div style="flex:1">
+          <div style="font-size:15px;font-weight:700;color:var(--text)">줌테스트</div>
+          <div style="font-size:12px;color:var(--sub);margin-top:2px">연습 · 실전 · 스케줄 신청</div>
         </div>
         <span style="color:var(--hint);font-size:18px;font-weight:300">›</span>
       </button>

@@ -317,6 +317,7 @@ let selectedUnits=[];
 let selectedMode=null;
 let starFilter=[2,3,4,5];
 let prioritySuneung=false;
+let numWords=33; // 문항 수 (기본 33)
 
 /* ━━ localStorage helpers ━━ */
 const LS={
@@ -724,8 +725,16 @@ function renderStudyMode(app){
       <div class="nav-title">학습 모드</div>
     </div>
     <div style="padding:16px 20px">
-      <div style="font-size:14px;color:var(--sub);font-weight:600">${selectedUnits.length}과 선택 · ${words.length}단어</div>
+      <div style="font-size:14px;color:var(--sub);font-weight:600">${selectedUnits.length}과 선택 · 총 ${words.length}단어</div>
     </div>
+    <div style="padding:0 20px 16px">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px">단어 수</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${[10,20,33,50].filter(n=>n<=words.length).map(n=>`<button onclick="numWords=${n};render()" style="padding:8px 16px;border-radius:20px;border:1.5px solid ${numWords===n?'var(--blue)':'var(--border)'};background:${numWords===n?'var(--blue-l)':'var(--card)'};color:${numWords===n?'var(--blue)':'var(--sub)'};font-size:13px;font-weight:700;cursor:pointer">${n}개</button>`).join('')}
+        <button onclick="numWords=${words.length};render()" style="padding:8px 16px;border-radius:20px;border:1.5px solid ${numWords>=words.length?'var(--blue)':'var(--border)'};background:${numWords>=words.length?'var(--blue-l)':'var(--card)'};color:${numWords>=words.length?'var(--blue)':'var(--sub)'};font-size:13px;font-weight:700;cursor:pointer">전체 ${words.length}</button>
+      </div>
+    </div>
+    <div style="padding:0 20px"><div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px">학습 모드</div></div>
     <div class="mode-grid" style="margin-bottom:20px">
       ${modes.map(m=>`
       <div class="mode-card ${selectedMode===m.id?'on':''}" onclick="selectedMode='${m.id}';render()">
@@ -736,7 +745,7 @@ function renderStudyMode(app){
     </div>
     <div style="padding:0 20px 100px">
       <button class="btn btn-blue" ${!selectedMode||words.length===0?'disabled':''} onclick="beginStudy()">
-        학습 시작 (${words.length}단어)
+        학습 시작 (${Math.min(numWords,words.length)}단어)
       </button>
     </div>
   </div>`;
@@ -760,9 +769,8 @@ function beginStudy(){
   }
   words=shuffle(words);
 
-  // Limit per mode
-  const limit=selectedMode==='matching'?8:selectedMode==='speed'?20:
-              selectedMode==='flashcard'?Math.min(20,words.length):Math.min(20,words.length);
+  // Limit per mode (numWords = 사용자 선택 문항 수)
+  const limit=selectedMode==='matching'?8:Math.min(numWords,words.length);
   words=words.slice(0,limit);
 
   session={mode:selectedMode,words,idx:0,score:0,total:words.length,results:[],
