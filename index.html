@@ -3985,6 +3985,27 @@ function doSub(auto){
   if(score>=80)setTimeout(confetti,400);
   // Badge toasts
   if(newBadges.length){let delay=score>=80?1200:800;newBadges.forEach((b,i)=>{setTimeout(()=>showBadgeToast(b),delay+i*2500);});}
+
+  // ━━ Supabase 점수 자동 저장 + 숙제 자동 완료 ━━
+  if(supa && profile.name){
+    const sid = new URLSearchParams(location.search).get('sid');
+    // 줌테스트 결과를 tests 테이블에 저장
+    if(sid){
+      supa.from('tests').insert({
+        student_id: sid,
+        date: new Date().toISOString().split('T')[0],
+        score: score,
+        scheduled: false,
+        memo: S.tt + ' (' + ok + '/' + S.qs.length + ')',
+        test_name: S.tt
+      }).then(r=>{if(r.error)console.log('test save error:',r.error.message);});
+      // 숙제 자동 완료
+      fetch("https://yhg-home.vercel.app/api/sync-homework",{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({student_id:sid,date:new Date().toISOString().split('T')[0]})
+      }).catch(()=>{});
+    }
+  }
 }
 
 // ━━ RESULT ━━
