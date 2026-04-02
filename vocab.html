@@ -711,8 +711,7 @@ async function saveTestResult(unitArr, score, total, correct, passed, wrongArr){
   if(!studentId)return;
   var payload={
     student_id: studentId,
-    unit: Array.isArray(unitArr)?unitArr[0]:unitArr,
-    units: Array.isArray(unitArr)?unitArr:null,
+    unit: Array.isArray(unitArr)?unitArr.join(','):String(unitArr),
     mode:'eng2kr',
     score: score,
     total: total,
