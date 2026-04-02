@@ -233,7 +233,8 @@ ul,ol{list-style:none}
 .quiz-options{padding:0 20px;display:flex;flex-direction:column;gap:10px}
 .quiz-opt{min-height:52px;padding:14px 20px;border-radius:var(--r-lg);font-size:15px;font-weight:600;
   background:var(--card);border:1.5px solid var(--border);color:var(--text);text-align:left;
-  display:flex;align-items:center;gap:12px;transition:all .15s var(--ease)}
+  display:flex;align-items:center;gap:12px;transition:all .15s var(--ease);
+  cursor:pointer;-webkit-tap-highlight-color:transparent;width:100%;position:relative;z-index:10}
 .quiz-opt:active{transform:scale(.98)}
 .quiz-opt .opt-num{width:28px;height:28px;border-radius:50%;background:var(--g100);
   display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--sub);flex-shrink:0}
@@ -1398,7 +1399,8 @@ function startTest(){
       (w.pronunciation?'<div class="quiz-pron">'+w.pronunciation+'</div>':'')+
       '<div class="quiz-speaker" onclick="speak(\''+w.word.replace(/'/g,"\\'")+'\')">\uD83D\uDD0A</div>'+
       '<div class="quiz-options" id="test-opts">'+options.map(function(o,i){
-        return '<button class="quiz-opt" onclick="checkTestAnswer(this,'+JSON.stringify(o===w.meaning)+','+JSON.stringify(w.meaning)+')">'+
+        var isC=o===w.meaning;
+        return '<button class="quiz-opt" data-correct="'+(isC?'1':'0')+'" data-answer="'+encodeURIComponent(w.meaning)+'" onclick="checkTestAnswer(this,this.dataset.correct===\'1\',decodeURIComponent(this.dataset.answer))">'+
           '<span class="opt-num">'+(i+1)+'</span><span>'+o+'</span></button>'}).join('')+'</div>';
     speak(w.word);
 
