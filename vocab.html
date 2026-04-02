@@ -1588,10 +1588,11 @@ function startWrongReview(nums){
           '<div class="fc-back"><div class="fc-meaning">'+w.meaning+'</div>'+
             (w.example_en?'<div class="fc-example">'+w.example_en+'</div>':'')+'</div></div></div>'+
       '<div class="fc-buttons" id="fc-btns" style="display:none;grid-template-columns:1fr 1fr">'+
-        '<button class="fc-btn" onclick="idx++;render()" style="border-left:3px solid var(--red)"><span class="fc-emoji">\uD83D\uDE30</span><span class="fc-label">\uB2E4\uC2DC</span></button>'+
-        '<button class="fc-btn" onclick="idx++;render()" style="border-left:3px solid var(--green)"><span class="fc-emoji">\u2705</span><span class="fc-label">\uC54C\uACA0\uC5B4\uC694</span></button></div>';
+        '<button class="fc-btn" onclick="window._wrNext()" style="border-left:3px solid var(--red)"><span class="fc-emoji">\uD83D\uDE30</span><span class="fc-label">\uB2E4\uC2DC</span></button>'+
+        '<button class="fc-btn" onclick="window._wrNext()" style="border-left:3px solid var(--green)"><span class="fc-emoji">\u2705</span><span class="fc-label">\uC54C\uACA0\uC5B4\uC694</span></button></div>';
     speak(w.word);
   }
+  window._wrNext = function(){ idx++; render(); };
   render();
 }
 
