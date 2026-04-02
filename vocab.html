@@ -719,10 +719,11 @@ async function saveTestResult(unitArr, score, total, correct, passed, wrongArr){
     passed: passed,
     wrong_words: wrongArr||[]
   };
+  window._lastSaveOnline=false;
   try{
     var res=await sb.from('vocab_results').insert(payload);
     if(res.error)throw new Error(res.error.message);
-    // 대기열 있으면 같이 전송
+    window._lastSaveOnline=true;
     flushOfflineQueue();
   }catch(e){
     console.warn('saveTestResult offline queue:',e);
@@ -1022,6 +1023,13 @@ function renderUnitSelector(prefix){
 }
 
 function toggleUnit(prefix,u){
+  // locked 모드에서 잠긴 과는 변경 불가
+  if(paramLocked&&prefix==='test'){
+    var lockedUnits=paramUnits?paramUnits.split(',').map(Number):[];
+    if(lockedUnits.length>0&&!lockedUnits.includes(u))return;
+    // 잠긴 과는 해제도 불가
+    if(lockedUnits.includes(u)){var arr2=testSelectedUnits;if(arr2.indexOf(u)>=0)return;}
+  }
   var arr=prefix==='study'?studySelectedUnits:testSelectedUnits;
   var idx=arr.indexOf(u);
   if(idx>=0)arr.splice(idx,1);else arr.push(u);
@@ -1029,12 +1037,14 @@ function toggleUnit(prefix,u){
   if(prefix==='test')document.getElementById('test-selected-count').textContent=arr.length?'('+arr.length+'\uAC1C \uC120\uD0DD)':'';
 }
 function selectAllUnits(prefix){
+  if(paramLocked&&prefix==='test')return;
   var arr=prefix==='study'?studySelectedUnits:testSelectedUnits;
   arr.length=0;for(var i=prefix==='test'?1:0;i<=40;i++)arr.push(i);
   playClick();renderUnitSelector(prefix);
   if(prefix==='test')document.getElementById('test-selected-count').textContent='('+arr.length+'\uAC1C \uC120\uD0DD)';
 }
 function clearUnits(prefix){
+  if(paramLocked&&prefix==='test')return;
   if(prefix==='study')studySelectedUnits=[];else testSelectedUnits=[];
   playClick();renderUnitSelector(prefix);
   if(prefix==='test')document.getElementById('test-selected-count').textContent='';
@@ -1654,7 +1664,7 @@ function startTest(){
           testSelectedUnits.map(function(u){return '<span style="padding:4px 12px;background:var(--blue-l);color:var(--blue);font-size:12px;font-weight:700;border-radius:12px">'+u+'\uACFC</span>'}).join('')+
           '<span style="padding:4px 12px;background:var(--g100);color:var(--sub);font-size:12px;font-weight:600;border-radius:12px">'+words.length+'\uBB38\uC81C</span>'+
         '</div>'+
-        (passed?'<div style="margin-top:8px;font-size:12px;color:var(--green);font-weight:600">\u2705 \uC120\uC0DD\uB2D8\uC5D0\uAC8C \uC790\uB3D9 \uC804\uC1A1\uB428</div>':'')+
+        (passed?(window._lastSaveOnline?'<div style="margin-top:8px;font-size:12px;color:var(--green);font-weight:600">\u2705 \uC120\uC0DD\uB2D8\uC5D0\uAC8C \uC790\uB3D9 \uC804\uC1A1\uB428</div>':'<div style="margin-top:8px;font-size:12px;color:var(--yellow);font-weight:600">\u23F3 \uC778\uD130\uB137 \uBCF5\uAD6C \uC2DC \uC790\uB3D9 \uC804\uC1A1</div>'):'')+
       '</div>'+
 
       // Wrong words section
@@ -1879,12 +1889,12 @@ function resetAll(){
 async function syncFromServer(){
   if(!studentId)return;
   try{
-    var res=await sb.from('vocab_results').select('unit,units,score,passed').eq('student_id',studentId).eq('passed',true);
+    var res=await sb.from('vocab_results').select('unit,score,passed').eq('student_id',studentId).eq('passed',true);
     if(!res.data||!res.data.length)return;
     res.data.forEach(function(r){
-      var us=r.units||[r.unit];
-      us.forEach(function(u){
-        u=Number(u);
+      var us=r.unit?String(r.unit).split(','):[];
+      us.forEach(function(uStr){
+        var u=Number(uStr.trim());
         if(!unitScores[u])unitScores[u]={attempts:0,best:0,passed:false};
         unitScores[u].passed=true;
         if(r.score>unitScores[u].best)unitScores[u].best=r.score;
