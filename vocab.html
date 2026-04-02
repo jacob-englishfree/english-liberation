@@ -594,8 +594,19 @@ const studentId = urlParams.get('sid') || localStorage.getItem('yhg_student_id')
 const paramUnit = urlParams.get('unit');
 const paramUnits = urlParams.get('units');
 const paramMode = urlParams.get('mode');
+const paramLocked = urlParams.get('locked') === '1';
 
-if (studentId) localStorage.setItem('yhg_student_id', studentId);
+if (studentId) {
+  localStorage.setItem('yhg_student_id', studentId);
+  // Cache student info for result page
+  sb.from('students').select('name,school,grade').eq('id',studentId).single().then(function(res){
+    if(res.data){
+      localStorage.setItem('yhg_student_name',res.data.name||'');
+      localStorage.setItem('yhg_student_school',res.data.school||'');
+      localStorage.setItem('yhg_student_grade',res.data.grade||'');
+    }
+  });
+}
 
 /* ━━ STORAGE ━━ */
 function loadData(k,def){try{const v=localStorage.getItem('vm_'+k);return v?JSON.parse(v):def}catch{return def}}
@@ -698,31 +709,63 @@ function logStudy(units){const t=today();if(!studyLog[t])studyLog[t]=[];units.fo
 /* ━━ SUPABASE: Save test result ━━ */
 async function saveTestResult(unitArr, score, total, correct, passed, wrongArr){
   if(!studentId)return;
+  var payload={
+    student_id: studentId,
+    unit: Array.isArray(unitArr)?unitArr[0]:unitArr,
+    units: Array.isArray(unitArr)?unitArr:null,
+    mode:'eng2kr',
+    score: score,
+    total: total,
+    correct: correct,
+    passed: passed,
+    wrong_words: wrongArr||[]
+  };
   try{
-    await sb.from('vocab_results').insert({
-      student_id: studentId,
-      unit: Array.isArray(unitArr)?unitArr[0]:unitArr,
-      units: Array.isArray(unitArr)?unitArr:null,
-      mode:'eng2kr',
-      score: score,
-      total: total,
-      correct: correct,
-      passed: passed,
-      wrong_words: wrongArr||[]
-    });
-  }catch(e){console.warn('saveTestResult error:',e)}
+    var res=await sb.from('vocab_results').insert(payload);
+    if(res.error)throw new Error(res.error.message);
+    // 대기열 있으면 같이 전송
+    flushOfflineQueue();
+  }catch(e){
+    console.warn('saveTestResult offline queue:',e);
+    // 오프라인 대기열에 저장
+    try{
+      var q=JSON.parse(localStorage.getItem('vm_offline_queue')||'[]');
+      q.push(payload);
+      localStorage.setItem('vm_offline_queue',JSON.stringify(q));
+      toast('결과 저장 대기 중 (인터넷 복구 시 자동 전송)');
+    }catch(ex){}
+  }
 }
+async function flushOfflineQueue(){
+  try{
+    var q=JSON.parse(localStorage.getItem('vm_offline_queue')||'[]');
+    if(!q.length)return;
+    for(var i=0;i<q.length;i++){
+      await sb.from('vocab_results').insert(q[i]);
+    }
+    localStorage.removeItem('vm_offline_queue');
+  }catch(e){}
+}
+// 페이지 로드 시 대기열 전송 시도
+setTimeout(flushOfflineQueue,3000);
 
 /* ━━ Homework auto-complete ━━ */
 async function autoCompleteHomework(selectedUnits, score){
   if(!studentId)return;
-  for(const u of selectedUnits){
-    try{
-      fetch('https://yhg-home.vercel.app/api/auto-complete-test',{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({student_id:studentId,score:score,test_ref:'unit'+u})
-      }).catch(function(){});
-    }catch(e){}
+  try{
+    const res=await fetch('https://yhg-home.vercel.app/api/auto-complete-test',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({student_id:studentId,score:score,units:selectedUnits})
+    });
+    const data=await res.json();
+    if(data.passed){
+      toast(data.allDayComplete?'숙제 올클리어! 🎉':'단어 테스트 자동완료! ✅');
+    }else if(data.missingUnits){
+      toast('아직 '+data.missingUnits.join(',')+'과를 안 봤어요');
+    }
+  }catch(e){
+    console.warn('autoCompleteHomework error:',e);
+    toast('숙제 연동 실패 — 인터넷 확인');
   }
 }
 
@@ -930,18 +973,28 @@ function renderUnitSelector(prefix){
   var rangesEl=document.getElementById(prefix+'-ranges');
   var selected=prefix==='study'?studySelectedUnits:testSelectedUnits;
 
-  var rangeHtml='<button class="range-chip" onclick="selectAllUnits(\''+prefix+'\')">\uC804\uCCB4</button>';
-  rangeHtml+='<button class="range-chip" onclick="clearUnits(\''+prefix+'\')">\uD574\uC81C</button>';
-  for(var i=1;i<=40;i+=5){
-    var end=Math.min(i+4,40);
-    rangeHtml+='<button class="range-chip" onclick="selectRange(\''+prefix+'\','+i+','+end+')">'+i+'~'+end+'</button>';
+  // locked 모드에서 범위 선택 버튼 숨김
+  if(paramLocked&&prefix==='test'){
+    rangesEl.innerHTML='<div style="font-size:12px;color:var(--sub);font-weight:600;padding:4px 0">🔒 숙제 범위 고정 (변경 불가)</div>';
+  }else{
+    var rangeHtml='<button class="range-chip" onclick="selectAllUnits(\''+prefix+'\')">\uC804\uCCB4</button>';
+    rangeHtml+='<button class="range-chip" onclick="clearUnits(\''+prefix+'\')">\uD574\uC81C</button>';
+    for(var i=1;i<=40;i+=5){
+      var end=Math.min(i+4,40);
+      rangeHtml+='<button class="range-chip" onclick="selectRange(\''+prefix+'\','+i+','+end+')">'+i+'~'+end+'</button>';
+    }
+    rangesEl.innerHTML=rangeHtml;
   }
-  rangesEl.innerHTML=rangeHtml;
 
   var html='';
   for(var u=0;u<=40;u++){
     var isSelected=selected.includes(u);
     var isDisabled=u===0&&prefix==='test';
+    // locked 모드: 지정된 과만 선택 가능, 나머지 비활성화
+    if(paramLocked&&prefix==='test'){
+      var lockedUnits=paramUnits?paramUnits.split(',').map(Number):[];
+      if(lockedUnits.length>0&&!lockedUnits.includes(u))isDisabled=true;
+    }
     var isPassed=unitScores[u]&&unitScores[u].passed;
     html+='<button class="unit-cell'+(isSelected?' selected':'')+(isDisabled?' disabled':'')+(isPassed&&!isSelected?' passed':'')+
       '" onclick="toggleUnit(\''+prefix+'\','+u+')">'+(u===0?'\uC911\uD559':u)+'</button>';
@@ -1390,12 +1443,30 @@ function renderTestSetup(){
 
 document.getElementById('test-start-btn').onclick=startTest;
 
+function getTestAttemptKey(){
+  var today=new Date().toISOString().slice(0,10);
+  var units=testSelectedUnits.slice().sort().join(',');
+  return 'vm_attempt_'+today+'_'+units;
+}
+function getTestAttempts(){
+  try{return parseInt(localStorage.getItem(getTestAttemptKey())||'0')}catch(e){return 0}
+}
+function incTestAttempts(){
+  try{localStorage.setItem(getTestAttemptKey(),String(getTestAttempts()+1))}catch(e){}
+}
+
 function startTest(){
+  // 재시험 3회 제한
+  if(getTestAttempts()>=3){
+    toast('오늘 같은 범위 시험은 3회까지예요');return;
+  }
   var words=shuffle(getUnitWords(testSelectedUnits)).slice(0,testCount);
   if(!words.length){toast('\uC120\uD0DD\uD55C \uC870\uAC74\uC5D0 \uB9DE\uB294 \uB2E8\uC5B4\uAC00 \uC5C6\uC5B4\uC694');return}
   var pool=VOCAB_DATA.filter(function(w){return w.unit>0});
   var idx=0,correct=0,answers=[];
   var timerRef=null;
+  var testStartTime=Date.now();
+  var testTimerElapsed=0;
   inTest=true;
   document.querySelectorAll('.nav-tab').forEach(function(t){
     if(t.dataset.tab!=='test'&&t.dataset.tab!=='stats')t.classList.add('disabled')});
@@ -1492,6 +1563,8 @@ function startTest(){
   function showResult(){
     clearInterval(timerRef);
     inTest=false;
+    testTimerElapsed=Math.round((Date.now()-testStartTime)/1000);
+    incTestAttempts();
     document.querySelectorAll('.nav-tab').forEach(function(t){t.classList.remove('disabled')});
     var score=Math.round(correct/words.length*100);
     var passed=score>=80;
@@ -1531,11 +1604,23 @@ function startTest(){
     var offset=circumference*(1-score/100);
     var scoreColor=score>=80?'var(--green)':score>=60?'var(--yellow)':'var(--red)';
 
+    // Student info from Supabase (cached) or localStorage
+    var stuName=localStorage.getItem('yhg_student_name')||'';
+    var stuSchool=localStorage.getItem('yhg_student_school')||'';
+    var stuGrade=localStorage.getItem('yhg_student_grade')||'';
+    var unitLabel=testSelectedUnits.map(function(u){return u+'과'}).join(', ');
+    var dateStr=new Date().toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'});
+    var timeSpent=testTimerElapsed?Math.floor(testTimerElapsed/60)+'분 '+testTimerElapsed%60+'초':'';
+    var pctCorrect=Math.round(correct/words.length*100);
+
     resEl.innerHTML=
-      '<div class="result-hero">'+
-        '<div style="font-size:40px;margin-bottom:8px">'+(passed?'\uD83C\uDF89':'\uD83D\uDCAA')+'</div>'+
-        '<div style="font-size:18px;font-weight:700;color:var(--sub);margin-bottom:24px">'+(passed?'\uCD95\uD558\uD574\uC694! \uD1B5\uACFC\uD588\uC5B4\uC694':'\uB2E4\uC74C\uC5D4 \uD560 \uC218 \uC788\uC5B4\uC694')+'</div>'+
-        '<div class="result-circle">'+
+      // Hero section with gradient
+      '<div style="background:linear-gradient(180deg,'+(passed?'rgba(0,192,114,.06)':'rgba(240,68,82,.06)')+',transparent);padding:32px 20px 20px;text-align:center">'+
+        '<div style="font-size:44px;margin-bottom:8px">'+(passed?'\uD83C\uDF89':'\uD83D\uDCAA')+'</div>'+
+        '<div style="font-size:20px;font-weight:800;color:var(--text)">'+(passed?'\uCD95\uD558\uD574\uC694! \uD1B5\uACFC!':'\uC544\uC27D\uC9C0\uB9CC \uB2E4\uC74C\uC5D4!')+'</div>'+
+        '<div style="font-size:13px;color:var(--sub);margin-top:4px">'+unitLabel+' \uB2E8\uC5B4 \uD14C\uC2A4\uD2B8</div>'+
+        // Score ring
+        '<div class="result-circle" style="margin:24px auto 0">'+
           '<svg width="160" height="160">'+
             '<circle cx="80" cy="80" r="60" fill="none" stroke="var(--g200)" stroke-width="8"/>'+
             '<circle cx="80" cy="80" r="60" fill="none" stroke="'+scoreColor+'" stroke-width="8"'+
@@ -1545,15 +1630,46 @@ function startTest(){
           '<div class="score-text">'+
             '<div class="result-score" id="score-num" style="color:'+scoreColor+'">0</div>'+
             '<div class="result-label">\uC810</div></div></div>'+
-        (passed?'<div style="margin-top:8px;font-size:16px;font-weight:700;color:var(--blue);animation:badgeIn .3s var(--ease-spring)">+50 XP</div>':'')+
-        '<div style="margin-top:12px;font-size:14px;color:var(--sub)">'+correct+'/'+words.length+' \uC815\uB2F5</div></div>'+
+        (passed?'<div style="margin-top:10px;display:inline-flex;align-items:center;gap:4px;padding:6px 16px;background:var(--blue-l);border-radius:20px;font-size:14px;font-weight:700;color:var(--blue)">+50 XP</div>':'')+
+      '</div>'+
+
+      // Stats row
+      '<div style="display:flex;gap:1px;margin:0 20px 12px;background:var(--g200);border-radius:12px;overflow:hidden">'+
+        '<div style="flex:1;padding:14px 0;background:var(--card);text-align:center"><div style="font-size:20px;font-weight:800;color:var(--green)">'+correct+'</div><div style="font-size:10px;color:var(--sub);margin-top:2px;font-weight:600">\uC815\uB2F5</div></div>'+
+        '<div style="flex:1;padding:14px 0;background:var(--card);text-align:center"><div style="font-size:20px;font-weight:800;color:var(--red)">'+wrongOnes.length+'</div><div style="font-size:10px;color:var(--sub);margin-top:2px;font-weight:600">\uC624\uB2F5</div></div>'+
+        '<div style="flex:1;padding:14px 0;background:var(--card);text-align:center"><div style="font-size:20px;font-weight:800;color:var(--blue)">'+pctCorrect+'%</div><div style="font-size:10px;color:var(--sub);margin-top:2px;font-weight:600">\uC815\uB2F5\uB960</div></div>'+
+      '</div>'+
+
+      // Student info card
+      (stuName?
+      '<div class="card card-sm" style="display:flex;align-items:center;gap:12px;padding:14px 16px">'+
+        '<div style="width:36px;height:36px;background:linear-gradient(135deg,var(--blue),#1B64DA);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:14px;font-weight:800">'+stuName.charAt(0)+'</div>'+
+        '<div style="flex:1"><div style="font-size:14px;font-weight:700">'+stuName+'</div><div style="font-size:11px;color:var(--sub)">'+stuSchool+(stuGrade?' \u00B7 '+stuGrade:'')+'</div></div>'+
+        '<div style="text-align:right"><div style="font-size:11px;color:var(--hint)">'+dateStr+'</div>'+(timeSpent?'<div style="font-size:11px;color:var(--hint)">\u23F1 '+timeSpent+'</div>':'')+'</div>'+
+      '</div>':'')+
+
+      // Test scope card
+      '<div class="card card-sm" style="padding:14px 16px">'+
+        '<div style="font-size:12px;font-weight:700;color:var(--sub);margin-bottom:8px">\uC2DC\uD5D8 \uBC94\uC704</div>'+
+        '<div style="display:flex;flex-wrap:wrap;gap:6px">'+
+          testSelectedUnits.map(function(u){return '<span style="padding:4px 12px;background:var(--blue-l);color:var(--blue);font-size:12px;font-weight:700;border-radius:12px">'+u+'\uACFC</span>'}).join('')+
+          '<span style="padding:4px 12px;background:var(--g100);color:var(--sub);font-size:12px;font-weight:600;border-radius:12px">'+words.length+'\uBB38\uC81C</span>'+
+        '</div>'+
+        (passed?'<div style="margin-top:8px;font-size:12px;color:var(--green);font-weight:600">\u2705 \uC120\uC0DD\uB2D8\uC5D0\uAC8C \uC790\uB3D9 \uC804\uC1A1\uB428</div>':'')+
+      '</div>'+
+
+      // Wrong words section
       (wrongOnes.length?
         '<div class="sec-label">\uD2C0\uB9B0 \uB2E8\uC5B4 ('+wrongOnes.length+'\uAC1C)</div>'+
-        '<div class="card card-sm" style="max-height:200px;overflow-y:auto">'+
-          wrongOnes.map(function(w){return '<div class="wrong-item"><div class="wrong-dot" style="background:var(--red)"></div>'+
-            '<div class="wrong-word">'+w.word+'</div><div class="wrong-meaning">'+w.meaning+'</div></div>'}).join('')+'</div>':'')+
+        '<div style="padding:0 20px;display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto">'+
+          wrongOnes.map(function(w){return '<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--card);border-radius:12px;border-left:3px solid var(--red)">'+
+            '<div style="flex:1"><div style="font-size:15px;font-weight:700;color:var(--text)">'+w.word+'</div><div style="font-size:12px;color:var(--sub);margin-top:2px">'+w.meaning+'</div></div>'+
+            '<button onclick="speak(\''+w.word.replace(/'/g,"\\'")+'\')" style="width:32px;height:32px;border:none;background:var(--g100);border-radius:50%;cursor:pointer;font-size:14px">\uD83D\uDD0A</button>'+
+          '</div>'}).join('')+'</div>':'')+
+
+      // Action buttons
       '<div style="padding:16px 20px;display:flex;flex-direction:column;gap:8px">'+
-        (wrongOnes.length?'<button class="btn btn-secondary" onclick="startWrongReview('+JSON.stringify(wrongOnes.map(function(w){return w.num}))+')">\uD2C0\uB9B0 '+wrongOnes.length+'\uAC1C \uBCF5\uC2B5</button>':'')+
+        (wrongOnes.length?'<button class="btn btn-secondary" onclick="startWrongReview('+JSON.stringify(wrongOnes.map(function(w){return w.num}))+')">\uD2C0\uB9B0 '+wrongOnes.length+'\uAC1C \uBCF5\uC2B5\uD558\uAE30</button>':'')+
         '<button class="btn btn-primary" onclick="renderTestSetup()">\uB2E4\uC2DC \uC2DC\uD5D8\uBCF4\uAE30</button>'+
         '<button class="btn btn-ghost" onclick="switchTab(\'home\')">\uD648\uC73C\uB85C</button></div>';
 
@@ -1760,7 +1876,27 @@ function resetAll(){
 }
 
 /* ━━ INIT ━━ */
+// Sync passed units from server (device change recovery)
+async function syncFromServer(){
+  if(!studentId)return;
+  try{
+    var res=await sb.from('vocab_results').select('unit,units,score,passed').eq('student_id',studentId).eq('passed',true);
+    if(!res.data||!res.data.length)return;
+    res.data.forEach(function(r){
+      var us=r.units||[r.unit];
+      us.forEach(function(u){
+        u=Number(u);
+        if(!unitScores[u])unitScores[u]={attempts:0,best:0,passed:false};
+        unitScores[u].passed=true;
+        if(r.score>unitScores[u].best)unitScores[u].best=r.score;
+      });
+    });
+    saveData('unitScores',unitScores);
+  }catch(e){console.warn('syncFromServer error:',e)}
+}
+
 function init(){
+  syncFromServer();
   initOnboard();
   if(paramMode==='test'){switchTab('test')}
   else if(paramUnits){
