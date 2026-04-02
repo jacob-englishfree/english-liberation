@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>영어해방공식 — 커리큘럼 테스트</title>
+<meta name="theme-color" content="#F4F5F7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css');
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
+body{font-family:'Pretendard Variable','Pretendard',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  background:var(--bg);color:var(--text);line-height:1.5;overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+button{font:inherit;border:none;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
+input{font:inherit;border:none;outline:none;background:none}
+a{text-decoration:none;color:inherit}
+
+:root{
+  --bg:#F4F5F7;--card:#FFFFFF;--blue:#3182F6;--blue-d:#1B64DA;--blue-l:#EBF4FF;--blue-xl:#F5F9FF;
+  --green:#00C072;--green-l:#E8FAF0;--red:#F04452;--red-l:#FFF0F0;
+  --yellow:#F59E0B;--yellow-l:#FFF8E1;--purple:#8B5CF6;--purple-l:#F3EEFF;
+  --orange:#FF6B35;
+  --text:#191F28;--sub:#4E5968;--hint:#8B95A1;--border:#E5E8EB;--divider:#F2F4F6;
+  --g900:#191F28;--g800:#333D4B;--g700:#4E5968;--g600:#6B7684;--g500:#8B95A1;
+  --g400:#B0B8C1;--g300:#D1D6DB;--g200:#E5E8EB;--g100:#F2F4F6;--g50:#F9FAFB;
+  --shadow:0 2px 8px rgba(0,0,0,.04);--shadow-lg:0 8px 24px rgba(0,0,0,.08);
+  --r-sm:8px;--r-md:12px;--r-lg:16px;--r-xl:20px;--r-full:9999px;
+  --ease:cubic-bezier(.22,1,.36,1);--ease-spring:cubic-bezier(.34,1.56,.64,1);
+  --dur:.2s;--dur-slow:.35s;
+}
+[data-theme="dark"]{
+  --bg:#0F0F0F;--card:#1A1A1A;--text:#F0F0F0;--sub:#A0A0A0;--hint:#666;
+  --border:#2A2A2A;--divider:#222;--blue-l:#1A2F4D;--green-l:#0F2E1F;--red-l:#3D1A1E;
+  --yellow-l:#2E2510;--purple-l:#1E1535;
+  --g900:#ECECEC;--g800:#D0D0D0;--g700:#B0B0B0;--g600:#909090;--g500:#707070;
+  --g400:#505050;--g300:#404040;--g200:#333;--g100:#222;--g50:#1A1A1A;
+  --shadow:0 2px 8px rgba(0,0,0,.2);--shadow-lg:0 8px 24px rgba(0,0,0,.3);
+}
+
+.app{max-width:480px;margin:0 auto;min-height:100dvh;position:relative}
+.screen{display:none;animation:pageIn .3s var(--ease)}
+.screen.active{display:block}
+
+.header{padding:16px 20px 8px;display:flex;align-items:center;gap:12px}
+.header-back{width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+  border-radius:50%;font-size:18px;color:var(--sub);background:var(--g100)}
+.header-back:active{background:var(--g200);transform:scale(.95)}
+.header-title{font-size:18px;font-weight:800;letter-spacing:-.3px;flex:1}
+
+.card{background:var(--card);border-radius:var(--r-lg);margin:0 20px 12px;box-shadow:var(--shadow);overflow:hidden}
+
+.btn{height:52px;border-radius:var(--r-lg);font-size:16px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;width:100%;
+  transition:all .15s var(--ease);letter-spacing:-.3px}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-primary:disabled{background:var(--g200);color:var(--g400)}
+.btn-danger{background:var(--red);color:#fff}
+.btn-ghost{background:var(--g100);color:var(--sub)}
+.btn-sm{height:44px;font-size:14px;border-radius:var(--r-md)}
+
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:200;
+  background:var(--g800);color:#fff;padding:12px 20px;border-radius:var(--r-full);
+  font-size:14px;font-weight:600;box-shadow:var(--shadow-lg);animation:toastIn .3s var(--ease);
+  pointer-events:none;white-space:nowrap}
+
+/* Curriculum cards */
+.cur-card{padding:18px 20px;display:flex;align-items:center;gap:14px;cursor:pointer;
+  transition:background .15s}
+.cur-card:active{background:var(--g50)}
+.cur-icon{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;
+  justify-content:center;font-size:22px;flex-shrink:0}
+.cur-info{flex:1;min-width:0}
+.cur-name{font-size:16px;font-weight:700}
+.cur-weeks{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.cur-week-dot{font-size:12px;font-weight:600;padding:2px 8px;border-radius:var(--r-full)}
+
+/* Week list */
+.week-item{padding:14px 20px;display:flex;align-items:center;gap:14px;
+  border-bottom:1px solid var(--divider);cursor:pointer;transition:background .15s}
+.week-item:active{background:var(--g50)}
+.week-item:last-child{border-bottom:none}
+.week-num{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;color:#fff;font-size:13px;font-weight:800;flex-shrink:0}
+.week-info{flex:1;min-width:0}
+.week-title{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.week-sub{font-size:12px;color:var(--hint);margin-top:1px}
+.week-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:var(--r-full)}
+
+/* Info screen */
+.info-hero{text-align:center;padding:40px 20px 24px}
+.info-icon{font-size:48px;margin-bottom:12px}
+.info-title{font-size:22px;font-weight:800;letter-spacing:-.4px}
+.info-sub{font-size:14px;color:var(--sub);margin-top:4px}
+.info-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:0 20px;margin-bottom:24px}
+.info-stat{background:var(--card);border-radius:var(--r-md);padding:14px;text-align:center;box-shadow:var(--shadow)}
+.info-stat-num{font-size:20px;font-weight:800}
+.info-stat-label{font-size:11px;color:var(--hint);margin-top:2px}
+.info-input{width:100%;height:48px;padding:0 16px;border-radius:var(--r-md);
+  background:var(--card);border:1.5px solid var(--border);font-size:15px;font-weight:600;
+  transition:border-color .2s}
+.info-input:focus{border-color:var(--blue)}
+
+/* Exam */
+.exam-topbar{position:sticky;top:0;z-index:50;background:var(--bg);padding:12px 20px;
+  display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--divider)}
+.exam-progress{flex:1;height:6px;border-radius:3px;background:var(--g200);overflow:hidden}
+.exam-progress-fill{height:100%;border-radius:3px;background:var(--blue);transition:width .3s var(--ease)}
+.exam-timer{font-size:14px;font-weight:700;color:var(--sub);white-space:nowrap;min-width:50px;text-align:right}
+.exam-timer.warn{color:var(--yellow)}
+.exam-timer.danger{color:var(--red)}
+.exam-count{font-size:13px;font-weight:700;color:var(--blue);white-space:nowrap}
+
+.q-card{background:var(--card);border-radius:var(--r-xl);margin:16px 16px;padding:20px;box-shadow:var(--shadow)}
+.q-num{font-size:12px;font-weight:700;color:var(--blue);background:var(--blue-l);
+  display:inline-block;padding:3px 10px;border-radius:var(--r-full);margin-bottom:10px}
+.q-type{font-size:11px;font-weight:600;color:var(--hint);margin-left:6px}
+.q-passage{font-size:14px;line-height:1.8;color:var(--text);margin-bottom:14px;
+  padding:14px;background:var(--g50);border-radius:var(--r-md);border-left:3px solid var(--blue);
+  word-break:keep-all;white-space:pre-wrap}
+.q-passage u{text-decoration:underline;text-decoration-color:var(--red);text-underline-offset:3px}
+.q-passage i{font-style:italic;color:var(--purple)}
+.q-stem{font-size:15px;font-weight:600;line-height:1.6;margin-bottom:16px;word-break:keep-all;
+  white-space:pre-wrap}
+
+.q-choices{display:flex;flex-direction:column;gap:8px}
+.q-choice{min-height:48px;padding:12px 16px;border-radius:var(--r-md);font-size:14px;font-weight:500;
+  background:var(--card);border:1.5px solid var(--border);color:var(--text);text-align:left;
+  display:flex;align-items:flex-start;gap:10px;transition:all .15s var(--ease);
+  cursor:pointer;width:100%;line-height:1.5;word-break:keep-all}
+.q-choice:active{transform:scale(.98)}
+.q-choice .ch-num{width:24px;height:24px;border-radius:50%;background:var(--g100);
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;
+  color:var(--sub);flex-shrink:0;margin-top:1px}
+.q-choice.selected{background:var(--blue-l);border-color:var(--blue);color:var(--blue)}
+.q-choice.selected .ch-num{background:var(--blue);color:#fff}
+.q-choice.correct{background:var(--green-l);border-color:var(--green);color:var(--green)}
+.q-choice.correct .ch-num{background:var(--green);color:#fff}
+.q-choice.wrong{background:var(--red-l);border-color:var(--red);color:var(--red);animation:shake .3s}
+.q-choice.wrong .ch-num{background:var(--red);color:#fff}
+
+/* Nav dots */
+.nav-dots{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:12px 20px 24px}
+.nav-dot{width:32px;height:32px;border-radius:50%;font-size:12px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--g100);color:var(--hint);transition:all .15s var(--ease);cursor:pointer}
+.nav-dot:active{transform:scale(.9)}
+.nav-dot.current{background:var(--blue);color:#fff}
+.nav-dot.answered{background:var(--blue-l);color:var(--blue)}
+.nav-dot.answered.current{background:var(--blue);color:#fff}
+
+/* Result */
+.result-hero{text-align:center;padding:48px 20px 24px}
+.result-circle{width:160px;height:160px;margin:0 auto 16px;position:relative}
+.result-circle svg{transform:rotate(-90deg)}
+.result-circle .score-text{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center}
+.result-score{font-size:56px;font-weight:900;letter-spacing:-2px;line-height:1}
+.result-unit{font-size:14px;color:var(--sub);font-weight:600}
+.result-badge{display:inline-flex;align-items:center;gap:6px;padding:8px 20px;
+  border-radius:var(--r-full);font-size:16px;font-weight:800;margin:12px auto;
+  animation:badgeIn .5s var(--ease-spring)}
+.result-pass{background:var(--green-l);color:var(--green)}
+.result-fail{background:var(--red-l);color:var(--red)}
+
+.result-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:0 20px;margin:20px 0}
+.result-stat{text-align:center;padding:12px 4px;background:var(--card);border-radius:var(--r-md);box-shadow:var(--shadow)}
+.result-stat-num{font-size:18px;font-weight:800}
+.result-stat-label{font-size:11px;color:var(--hint);margin-top:2px}
+
+.type-bar{display:flex;align-items:center;gap:8px;padding:8px 0}
+.type-bar-label{font-size:12px;font-weight:600;color:var(--sub);width:80px;text-align:right;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0}
+.type-bar-track{flex:1;height:8px;border-radius:4px;background:var(--g100);overflow:hidden}
+.type-bar-fill{height:100%;border-radius:4px;transition:width .6s var(--ease)}
+.type-bar-pct{font-size:12px;font-weight:700;width:36px;text-align:right;flex-shrink:0}
+
+.review-item{padding:16px 20px;border-bottom:1px solid var(--divider)}
+.review-item:last-child{border-bottom:none}
+.review-q-head{display:flex;align-items:center;gap:8px;margin-bottom:8px;cursor:pointer}
+.review-q-num{font-size:12px;font-weight:700;padding:2px 8px;border-radius:var(--r-full)}
+.review-q-type{font-size:12px;color:var(--hint)}
+.review-expand{margin-left:auto;font-size:14px;color:var(--hint);transition:transform .2s}
+.review-detail{display:none;margin-top:10px;padding:12px;background:var(--g50);border-radius:var(--r-md);
+  font-size:13px;line-height:1.7;color:var(--sub)}
+.review-detail.open{display:block;animation:pageIn .3s var(--ease)}
+
+.xp-float{position:fixed;top:40%;left:50%;transform:translate(-50%,-50%);
+  font-size:28px;font-weight:900;color:var(--blue);pointer-events:none;
+  animation:xpFloat 1.5s var(--ease) forwards;z-index:100}
+
+.confetti-piece{position:fixed;width:10px;height:10px;top:-10px;pointer-events:none;z-index:100;
+  animation:confettiFall 2.5s linear forwards}
+
+/* History item in info */
+.hist-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--divider)}
+.hist-item:last-child{border-bottom:none}
+.hist-score{font-size:15px;font-weight:800;width:48px;text-align:center}
+.hist-info{flex:1}
+.hist-date{font-size:12px;color:var(--hint)}
+.hist-detail{font-size:13px;font-weight:600}
+
+/* Animations */
+@keyframes pageIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+@keyframes xpFloat{0%{opacity:1;transform:translate(-50%,-50%)}100%{opacity:0;transform:translate(-50%,-180px)}}
+@keyframes confettiFall{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,-10px)}to{opacity:1;transform:translate(-50%,0)}}
+@keyframes badgeIn{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:scale(1)}}
+@keyframes scoreCount{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:scale(1)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+@keyframes progressFill{from{width:0}to{width:var(--w)}}
+
+/* Submit bar */
+.submit-bar{position:fixed;bottom:0;left:0;right:0;z-index:50;padding:12px 20px calc(12px + env(safe-area-inset-bottom));
+  background:rgba(244,245,247,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-top:1px solid var(--border)}
+.submit-bar-inner{max-width:480px;margin:0 auto;display:flex;gap:10px}
+
+/* Scrollable wrapper for exam to avoid submit bar overlap */
+.exam-body{padding-bottom:calc(80px + env(safe-area-inset-bottom))}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+<!-- SCREEN 1: Selection -->
+<div class="screen active" id="scr-select">
+  <div class="header">
+    <button class="header-back" onclick="location.href='index.html'">&#8592;</button>
+    <div class="header-title">커리큘럼 테스트</div>
+  </div>
+  <div style="padding:4px 20px 16px;font-size:13px;color:var(--sub)">커리큘럼과 주차를 선택하세요</div>
+  <div id="cur-list"></div>
+</div>
+
+<!-- SCREEN 2: Week Select -->
+<div class="screen" id="scr-weeks">
+  <div class="header">
+    <button class="header-back" onclick="showScreen('scr-select')">&#8592;</button>
+    <div class="header-title" id="weeks-title"></div>
+  </div>
+  <div id="week-list"></div>
+</div>
+
+<!-- SCREEN 3: Test Info -->
+<div class="screen" id="scr-info">
+  <div class="header">
+    <button class="header-back" onclick="showScreen('scr-weeks')">&#8592;</button>
+    <div class="header-title">테스트 정보</div>
+  </div>
+  <div id="info-content"></div>
+</div>
+
+<!-- SCREEN 4: Exam -->
+<div class="screen" id="scr-exam">
+  <div class="exam-topbar" id="exam-topbar"></div>
+  <div class="exam-body" id="exam-body"></div>
+  <div class="submit-bar" id="submit-bar" style="display:none">
+    <div class="submit-bar-inner">
+      <button class="btn btn-ghost btn-sm" style="flex:.4" id="btn-prev" onclick="navQ(-1)">이전</button>
+      <button class="btn btn-primary btn-sm" style="flex:1" id="btn-submit" onclick="submitExam()">제출하기</button>
+      <button class="btn btn-ghost btn-sm" style="flex:.4" id="btn-next" onclick="navQ(1)">다음</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN 5: Result -->
+<div class="screen" id="scr-result">
+  <div id="result-content"></div>
+</div>
+
+</div>
+<div id="toast-el"></div>
+
+<script>
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Supabase
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const SUPABASE_URL='https://awtqtubyymjtkhrigqhw.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF3dHF0dWJ5eW1qdGtocmlncWh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMTUxNjIsImV4cCI6MjA4ODY5MTE2Mn0.HgxHj2MDLJpxEEN4hNdNOy5zBCWlHD37BPQjmEdsWa0';
+const sb=window.supabase?window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY):null;
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Test Manifest
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const TEST_MANIFEST={
+  '이미지독해':{color:'#7C3AED',bg:'#EDE9FE',icon:'📚',weeks:[
+    {w:2,title:'+/-가 문장을 결정한다',available:true},
+    {w:3,title:'지우면 보인다',available:true},
+  ]},
+  '내신의기술':{color:'#3182F6',bg:'#EBF4FF',icon:'📘',weeks:[
+    {w:3,title:'분사 완전 정복',available:true},
+    {w:4,title:'관계대명사 완전 정복',available:true},
+  ]},
+  '정규반':{color:'#16A34A',bg:'#E8F5E9',icon:'📗',weeks:[
+    {w:13,title:'+/-가 문장을 결정한다',available:true},
+  ]},
+};
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Levels & XP
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const LEVELS=[
+  {name:'새싹',icon:'🌱',min:0},
+  {name:'나무',icon:'🌳',min:100},
+  {name:'별',icon:'⭐',min:300},
+  {name:'빛나는 별',icon:'🌟',min:600},
+  {name:'다이아몬드',icon:'💎',min:1000},
+  {name:'챔피언',icon:'🏆',min:1500},
+  {name:'전설',icon:'👑',min:2500},
+];
+function getLevel(xp){
+  for(let i=LEVELS.length-1;i>=0;i--) if(xp>=LEVELS[i].min) return LEVELS[i];
+  return LEVELS[0];
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   State
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+let currentCur=null, currentWeek=null, currentMeta=null, questions=[], answers=[];
+let currentQ=0, examMode='practice', timerInterval=null, timeLeft=0, startTime=0;
+const params=new URLSearchParams(location.search);
+const SID=params.get('sid')||'';
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Utility
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function haptic(type){try{navigator.vibrate&&navigator.vibrate(type==='tap'?10:type==='success'?[10,50,10]:30);}catch(e){}}
+
+let toastTimer;
+function showToast(msg){
+  clearTimeout(toastTimer);
+  const el=document.getElementById('toast-el');
+  el.innerHTML=`<div class="toast">${esc(msg)}</div>`;
+  toastTimer=setTimeout(()=>el.innerHTML='',2500);
+}
+
+function playClick(){try{const a=new AudioContext(),o=a.createOscillator(),g=a.createGain();o.connect(g);g.connect(a.destination);o.frequency.value=800;g.gain.value=.08;o.start();o.stop(a.currentTime+.05);}catch(e){}}
+function playCorrect(){try{const a=new AudioContext();[523,659,784].forEach((f,i)=>{const o=a.createOscillator(),g=a.createGain();o.connect(g);g.connect(a.destination);o.frequency.value=f;g.gain.value=.06;o.start(a.currentTime+i*.08);o.stop(a.currentTime+i*.08+.12);});}catch(e){}}
+function playWrong(){try{const a=new AudioContext(),o=a.createOscillator(),g=a.createGain();o.connect(g);g.connect(a.destination);o.type='sawtooth';o.frequency.value=200;g.gain.value=.06;o.start();o.stop(a.currentTime+.15);}catch(e){}}
+
+function formatTime(s){const m=Math.floor(s/60),ss=s%60;return `${m}:${String(ss).padStart(2,'0')}`;}
+
+function getProfile(){
+  try{
+    const p=JSON.parse(localStorage.getItem('testProfile'))||{};
+    return {name:p.name||'',school:p.school||'',grade:p.grade||''};
+  }catch(e){return {name:'',school:'',grade:''};}
+}
+function saveProfile(p){try{localStorage.setItem('testProfile',JSON.stringify(p));}catch(e){}}
+
+function getHistory(){try{return JSON.parse(localStorage.getItem('testHistory'))||[];}catch(e){return [];}}
+function addHistory(entry){
+  const h=getHistory();
+  h.unshift(entry);
+  if(h.length>50)h.length=50;
+  try{localStorage.setItem('testHistory',JSON.stringify(h));}catch(e){}
+}
+
+function getXP(){try{return parseInt(localStorage.getItem('testXP'))||0;}catch(e){return 0;}}
+function addXP(n){const x=getXP()+n;try{localStorage.setItem('testXP',String(x));}catch(e){}return x;}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Screen Management
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Screen 1: Curriculum List
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function renderCurList(){
+  const el=document.getElementById('cur-list');
+  let html='';
+  for(const [name,c] of Object.entries(TEST_MANIFEST)){
+    const avail=c.weeks.filter(w=>w.available).length;
+    const total=c.weeks.length;
+    html+=`<div class="card" style="cursor:pointer" onclick="selectCurriculum('${name}')">
+      <div class="cur-card">
+        <div class="cur-icon" style="background:${c.bg}">${c.icon}</div>
+        <div class="cur-info">
+          <div class="cur-name">${esc(name)}</div>
+          <div class="cur-weeks">
+            ${c.weeks.map(w=>`<span class="cur-week-dot" style="background:${w.available?c.bg:'var(--g100)'};color:${w.available?c.color:'var(--hint)'}">${w.w}주차 ${w.available?'&#10003;':'&#9675;'}</span>`).join('')}
+          </div>
+        </div>
+        <span style="color:var(--hint);font-size:16px">&#8250;</span>
+      </div>
+    </div>`;
+  }
+  el.innerHTML=html;
+}
+
+function selectCurriculum(name){
+  currentCur=name;
+  haptic('tap');playClick();
+  renderWeekList();
+  showScreen('scr-weeks');
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Screen 2: Week List
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function renderWeekList(){
+  const c=TEST_MANIFEST[currentCur];
+  document.getElementById('weeks-title').textContent=currentCur;
+  const el=document.getElementById('week-list');
+  const hist=getHistory().filter(h=>h.curriculum===currentCur);
+
+  let html='<div class="card">';
+  c.weeks.forEach(w=>{
+    const best=hist.filter(h=>h.week===w.w).reduce((max,h)=>Math.max(max,h.score),0);
+    html+=`<div class="week-item" onclick="${w.available?`selectWeek(${w.w})`:`showToast('아직 준비 중입니다')`}" style="${w.available?'':'opacity:.45'}">
+      <div class="week-num" style="background:${w.available?c.color:'var(--g300)'}">${w.w}</div>
+      <div class="week-info">
+        <div class="week-title">${w.w}주차 &middot; ${esc(w.title)}</div>
+        <div class="week-sub">${best>0?`최고 ${best}점`:'미응시'}</div>
+      </div>
+      <span class="week-badge" style="background:${w.available?'var(--green-l)':'var(--g100)'};color:${w.available?'var(--green)':'var(--hint)'}">${w.available?'응시 가능':'준비 중'}</span>
+    </div>`;
+  });
+  html+='</div>';
+  el.innerHTML=html;
+}
+
+function selectWeek(w){
+  currentWeek=w;
+  haptic('tap');playClick();
+  loadTestInfo();
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Load Test Data
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+async function loadTest(curriculum,week){
+  const metaResp=await fetch(`data/tests/${curriculum}/week${week}.json`);
+  if(!metaResp.ok) throw new Error('메타데이터를 불러올 수 없습니다');
+  const meta=await metaResp.json();
+
+  const qResp=await fetch(`data/tests/${curriculum}/week${week}_q.js`);
+  if(!qResp.ok) throw new Error('문제를 불러올 수 없습니다');
+  const qText=await qResp.text();
+
+  const qMatch=qText.match(/const\s+Q\s*=\s*(\[[\s\S]*\]);/);
+  if(!qMatch) throw new Error('문제 파싱 실패');
+  const questions=new Function('return '+qMatch[1])();
+  return {...meta,questions};
+}
+
+async function loadTestInfo(){
+  try{
+    const data=await loadTest(currentCur,currentWeek);
+    currentMeta=data;
+    questions=data.questions;
+    renderInfo();
+    showScreen('scr-info');
+  }catch(e){
+    showToast(e.message||'데이터 로드 실패');
+  }
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Screen 3: Test Info
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function renderInfo(){
+  const c=TEST_MANIFEST[currentCur];
+  const m=currentMeta;
+  const p=getProfile();
+  const hist=getHistory().filter(h=>h.curriculum===currentCur&&h.week===currentWeek);
+
+  let histHtml='';
+  if(hist.length>0){
+    histHtml=`<div style="padding:0 20px 16px">
+      <div style="font-size:13px;font-weight:700;color:var(--sub);margin-bottom:8px">이전 응시 기록</div>
+      <div class="card" style="margin:0">${hist.slice(0,5).map(h=>`
+        <div class="hist-item" style="padding:10px 16px">
+          <div class="hist-score" style="color:${h.score>=80?'var(--green)':'var(--red)'}">${h.score}</div>
+          <div class="hist-info">
+            <div class="hist-detail">${h.correct}/${h.total} 정답 &middot; ${h.mode==='real'?'실전':'연습'}</div>
+            <div class="hist-date">${h.date}</div>
+          </div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('info-content').innerHTML=`
+    <div class="info-hero">
+      <div class="info-icon">${c.icon}</div>
+      <div class="info-title" style="color:${c.color}">${esc(m.title)}</div>
+      <div class="info-sub">${esc(currentCur)} ${currentWeek}주차</div>
+    </div>
+
+    <div class="info-stats">
+      <div class="info-stat">
+        <div class="info-stat-num">${m.qCount}</div>
+        <div class="info-stat-label">문항</div>
+      </div>
+      <div class="info-stat">
+        <div class="info-stat-num">${formatTime(m.time)}</div>
+        <div class="info-stat-label">제한시간</div>
+      </div>
+      <div class="info-stat">
+        <div class="info-stat-num">${m.total}</div>
+        <div class="info-stat-label">총점</div>
+      </div>
+    </div>
+
+    <div style="padding:0 20px 16px;display:flex;flex-direction:column;gap:10px">
+      <input class="info-input" id="inp-name" placeholder="이름" value="${esc(p.name)}">
+      <input class="info-input" id="inp-school" placeholder="학교" value="${esc(p.school)}">
+      <input class="info-input" id="inp-grade" placeholder="학년 (예: 고1)" value="${esc(p.grade)}">
+    </div>
+
+    <div style="padding:0 20px 12px;display:flex;gap:10px">
+      <button class="btn btn-primary" style="flex:1" onclick="startExam('practice')">
+        <span style="margin-right:6px">📝</span> 연습 모드
+      </button>
+      <button class="btn btn-danger" style="flex:1" onclick="startExam('real')">
+        <span style="margin-right:6px">🔥</span> 실전 모드
+      </button>
+    </div>
+    <div style="padding:0 20px 8px;text-align:center;font-size:12px;color:var(--hint)">
+      연습: 즉시 정답 확인 &middot; 실전: 제출 후 한번에 채점
+    </div>
+
+    ${histHtml}
+  `;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Screen 4: Exam
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function startExam(mode){
+  const name=document.getElementById('inp-name').value.trim();
+  if(!name){showToast('이름을 입력하세요');return;}
+  saveProfile({
+    name,
+    school:document.getElementById('inp-school').value.trim(),
+    grade:document.getElementById('inp-grade').value.trim()
+  });
+
+  examMode=mode;
+  answers=new Array(questions.length).fill(-1);
+  currentQ=0;
+  startTime=Date.now();
+  timeLeft=currentMeta.time;
+
+  haptic('tap');playClick();
+  renderExam();
+  showScreen('scr-exam');
+  document.getElementById('submit-bar').style.display='block';
+  startTimer();
+}
+
+function startTimer(){
+  clearInterval(timerInterval);
+  timerInterval=setInterval(()=>{
+    timeLeft--;
+    updateTimer();
+    if(timeLeft<=0){
+      clearInterval(timerInterval);
+      showToast('시간 종료! 자동 제출합니다');
+      setTimeout(()=>submitExam(),500);
+    }
+  },1000);
+}
+
+function updateTimer(){
+  const el=document.getElementById('timer-display');
+  if(!el)return;
+  el.textContent=formatTime(timeLeft);
+  el.className='exam-timer'+(timeLeft<=60?' danger':timeLeft<=180?' warn':'');
+
+  const pct=((currentMeta.time-timeLeft)/currentMeta.time*100).toFixed(1);
+  const bar=document.getElementById('timer-bar');
+  if(bar){
+    bar.style.width=pct+'%';
+    bar.style.background=timeLeft<=60?'var(--red)':timeLeft<=180?'var(--yellow)':'var(--blue)';
+  }
+}
+
+function renderExam(){
+  const q=questions[currentQ];
+  const total=questions.length;
+  const pct=((currentQ+1)/total*100).toFixed(1);
+
+  document.getElementById('exam-topbar').innerHTML=`
+    <div class="exam-count">${currentQ+1}/${total}</div>
+    <div class="exam-progress"><div class="exam-progress-fill" style="width:${pct}%"></div></div>
+    <div class="exam-timer" id="timer-display">${formatTime(timeLeft)}</div>
+  `;
+
+  let passageHtml='';
+  if(q.passage){
+    passageHtml=`<div class="q-passage">${q.passage}</div>`;
+  }
+
+  const circleNums=['①','②','③','④','⑤'];
+  let choicesHtml='<div class="q-choices">';
+  q.ch.forEach((ch,i)=>{
+    // Strip leading circle number if present
+    let text=ch.replace(/^[①②③④⑤]\s*/,'');
+    let cls='q-choice';
+    if(answers[currentQ]===i) cls+=' selected';
+    choicesHtml+=`<button class="${cls}" data-idx="${i}" onclick="pickAnswer(${currentQ},${i})">
+      <span class="ch-num">${circleNums[i]||i+1}</span>
+      <span>${text}</span>
+    </button>`;
+  });
+  choicesHtml+='</div>';
+
+  // Nav dots
+  let dotsHtml='<div class="nav-dots">';
+  questions.forEach((_,i)=>{
+    let cls='nav-dot';
+    if(i===currentQ) cls+=' current';
+    else if(answers[i]>=0) cls+=' answered';
+    dotsHtml+=`<button class="${cls}" onclick="goToQ(${i})">${i+1}</button>`;
+  });
+  dotsHtml+='</div>';
+
+  document.getElementById('exam-body').innerHTML=`
+    <div class="q-card">
+      <span class="q-num">Q${q.id}</span>
+      <span class="q-type">${esc(q.type)} &middot; ${esc(q.diff)} &middot; ${q.pts}점</span>
+      ${passageHtml}
+      <div class="q-stem">${q.stem}</div>
+      ${choicesHtml}
+    </div>
+    <div id="feedback-area"></div>
+    ${dotsHtml}
+  `;
+
+  // Update prev/next buttons
+  document.getElementById('btn-prev').disabled=currentQ===0;
+  document.getElementById('btn-next').textContent=currentQ===total-1?'제출':'다음';
+  document.getElementById('btn-next').onclick=currentQ===total-1?submitExam:()=>navQ(1);
+
+  // Show submit only when all answered or last Q
+  const answeredCount=answers.filter(a=>a>=0).length;
+  const submitBtn=document.getElementById('btn-submit');
+  submitBtn.textContent=`제출하기 (${answeredCount}/${total})`;
+  submitBtn.disabled=false;
+
+  updateTimer();
+}
+
+function pickAnswer(qIdx,choiceIdx){
+  if(examMode==='practice'&&answers[qIdx]>=0) return; // already answered in practice
+  answers[qIdx]=choiceIdx;
+  haptic('tap');playClick();
+
+  if(examMode==='practice'){
+    showPracticeFeedback(qIdx,choiceIdx);
+  }else{
+    renderExam();
+  }
+}
+
+function showPracticeFeedback(qIdx,choiceIdx){
+  const q=questions[qIdx];
+  const isCorrect=choiceIdx===q.ans;
+
+  if(isCorrect){playCorrect();haptic('success');}
+  else{playWrong();haptic('error');}
+
+  // Re-render choices with correct/wrong
+  const btns=document.querySelectorAll('.q-choice');
+  btns.forEach(btn=>{
+    const idx=parseInt(btn.dataset.idx);
+    btn.onclick=null;
+    btn.style.cursor='default';
+    if(idx===q.ans) btn.classList.add('correct');
+    else if(idx===choiceIdx&&!isCorrect) btn.classList.add('wrong');
+  });
+
+  // Show explanation
+  const fb=document.getElementById('feedback-area');
+  if(q.det&&q.det.exp){
+    fb.innerHTML=`<div style="margin:0 16px;padding:14px;border-radius:var(--r-md);
+      background:${isCorrect?'var(--green-l)':'var(--red-l)'};font-size:13px;line-height:1.7;color:var(--sub)">
+      <div style="font-weight:700;color:${isCorrect?'var(--green)':'var(--red)'};margin-bottom:6px">
+        ${isCorrect?'정답입니다! 🎉':'오답입니다 😔'}
+      </div>
+      <div>${esc(q.det.exp)}</div>
+      ${q.det.concept?`<div style="margin-top:8px;padding:8px;background:var(--card);border-radius:var(--r-sm);font-size:12px;font-weight:600;color:var(--blue)">💡 ${esc(q.det.concept)}</div>`:''}
+    </div>`;
+  }
+
+  // Update nav dots
+  const dots=document.querySelectorAll('.nav-dot');
+  dots.forEach((d,i)=>{if(i===qIdx)d.classList.add('answered');});
+
+  // Auto-advance after 2s in practice
+  setTimeout(()=>{
+    if(currentQ<questions.length-1){navQ(1);}
+    else{
+      const unanswered=answers.filter(a=>a<0).length;
+      if(unanswered===0) showToast('모든 문제를 풀었습니다! 제출하세요');
+    }
+  },2000);
+}
+
+function navQ(dir){
+  const next=currentQ+dir;
+  if(next<0||next>=questions.length)return;
+  currentQ=next;
+  haptic('tap');
+  renderExam();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function goToQ(idx){
+  currentQ=idx;
+  haptic('tap');
+  renderExam();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Submit & Score
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function submitExam(){
+  const unanswered=answers.filter(a=>a<0).length;
+  if(unanswered>0&&examMode==='real'){
+    if(!confirm(`${unanswered}문제를 풀지 않았습니다. 제출할까요?`)) return;
+  }
+  clearInterval(timerInterval);
+  document.getElementById('submit-bar').style.display='none';
+
+  const elapsed=Math.round((Date.now()-startTime)/1000);
+  let correct=0,wrong=0,skip=0,score=0;
+  const results=[];
+  const typeStats={};
+
+  questions.forEach((q,i)=>{
+    const picked=answers[i];
+    const isCorrect=picked===q.ans;
+    if(picked<0){skip++;results.push({q,picked,isCorrect:false,skipped:true});}
+    else if(isCorrect){correct++;score+=q.pts;results.push({q,picked,isCorrect:true,skipped:false});}
+    else{wrong++;results.push({q,picked,isCorrect:false,skipped:false});}
+
+    if(!typeStats[q.type]) typeStats[q.type]={total:0,correct:0};
+    typeStats[q.type].total++;
+    if(picked>=0&&isCorrect) typeStats[q.type].correct++;
+  });
+
+  const total=questions.length;
+  const passed=score>=80;
+
+  // XP
+  const xpGain=Math.round(score/2)+(passed?20:0)+(examMode==='real'?15:0);
+  const newXP=addXP(xpGain);
+  const level=getLevel(newXP);
+
+  // Save history
+  const entry={
+    curriculum:currentCur,week:currentWeek,score,correct,total,
+    mode:examMode,elapsed,date:new Date().toLocaleDateString('ko-KR'),
+    timestamp:Date.now()
+  };
+  addHistory(entry);
+
+  // Supabase save
+  if(examMode==='real') saveToSupabase(score,correct,total);
+
+  renderResult(score,correct,wrong,skip,elapsed,total,passed,level,xpGain,newXP,typeStats,results);
+  showScreen('scr-result');
+  if(passed) fireConfetti();
+}
+
+async function saveToSupabase(score,correct,total){
+  if(!SID||!sb) return;
+  try{
+    await sb.from('tests').insert({
+      student_id:SID,
+      date:new Date().toISOString().split('T')[0],
+      score,
+      scheduled:false,
+      memo:`${currentCur} ${currentWeek}주차 (${correct}/${total})`,
+      test_name:`${currentCur} ${currentWeek}주차`
+    });
+
+    fetch('https://yhg-home.vercel.app/api/sync-homework',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({student_id:SID,date:new Date().toISOString().split('T')[0]})
+    }).catch(()=>{});
+  }catch(e){console.error('Save failed:',e);}
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Screen 5: Result
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function renderResult(score,correct,wrong,skip,elapsed,total,passed,level,xpGain,totalXP,typeStats,results){
+  const c=TEST_MANIFEST[currentCur];
+  const circumference=2*Math.PI*68;
+  const pct=score/currentMeta.total;
+  const offset=circumference*(1-pct);
+
+  // Type analysis bars
+  let typeBarsHtml='';
+  for(const [type,stat] of Object.entries(typeStats)){
+    const rate=stat.total>0?Math.round(stat.correct/stat.total*100):0;
+    const barColor=rate>=80?'var(--green)':rate>=50?'var(--yellow)':'var(--red)';
+    typeBarsHtml+=`<div class="type-bar">
+      <div class="type-bar-label">${esc(type)}</div>
+      <div class="type-bar-track"><div class="type-bar-fill" style="width:${rate}%;background:${barColor}"></div></div>
+      <div class="type-bar-pct" style="color:${barColor}">${rate}%</div>
+    </div>`;
+  }
+
+  // Wrong questions review
+  const wrongItems=results.filter(r=>!r.isCorrect);
+  let reviewHtml='';
+  if(wrongItems.length>0){
+    reviewHtml=`<div style="padding:20px 20px 8px"><div style="font-size:15px;font-weight:700">오답 리뷰 (${wrongItems.length}문제)</div></div>
+    <div class="card" style="padding:0">
+      ${wrongItems.map((r,i)=>{
+        const circleNums=['①','②','③','④','⑤'];
+        return `<div class="review-item">
+          <div class="review-q-head" onclick="toggleReview(${i})">
+            <span class="review-q-num" style="background:var(--red-l);color:var(--red)">Q${r.q.id}</span>
+            <span class="review-q-type">${esc(r.q.type)}</span>
+            <span style="font-size:12px;color:var(--hint);margin-left:auto">${r.skipped?'미응답':'오답: '+circleNums[r.picked]}</span>
+            <span class="review-expand" id="rev-arrow-${i}">&#9660;</span>
+          </div>
+          <div style="font-size:13px;line-height:1.6;color:var(--sub);margin-bottom:4px">${r.q.stem.substring(0,80)}${r.q.stem.length>80?'...':''}</div>
+          <div style="font-size:12px;font-weight:700;color:var(--green)">정답: ${circleNums[r.q.ans]}</div>
+          <div class="review-detail" id="rev-detail-${i}">
+            ${r.q.det?`<div>${esc(r.q.det.exp||'')}</div>
+            ${r.q.det.concept?`<div style="margin-top:6px;font-weight:600;color:var(--blue)">💡 ${esc(r.q.det.concept)}</div>`:''}`:'해설 없음'}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  document.getElementById('result-content').innerHTML=`
+    <div class="result-hero">
+      <div class="result-circle">
+        <svg width="160" height="160">
+          <circle cx="80" cy="80" r="68" fill="none" stroke="var(--g200)" stroke-width="8"/>
+          <circle cx="80" cy="80" r="68" fill="none" stroke="${passed?'var(--green)':'var(--red)'}"
+            stroke-width="8" stroke-linecap="round"
+            stroke-dasharray="${circumference}" stroke-dashoffset="${circumference}"
+            id="score-ring"/>
+        </svg>
+        <div class="score-text">
+          <div class="result-score" id="score-num" style="color:${passed?'var(--green)':'var(--red)'}">0</div>
+          <div class="result-unit">/ ${currentMeta.total}점</div>
+        </div>
+      </div>
+      <div class="result-badge ${passed?'result-pass':'result-fail'}">
+        ${passed?'🎉 PASS':'😔 FAIL'}
+      </div>
+      <div style="margin-top:8px;font-size:15px;font-weight:700">${level.icon} ${level.name}</div>
+    </div>
+
+    <div class="result-stats">
+      <div class="result-stat"><div class="result-stat-num" style="color:var(--green)">${correct}</div><div class="result-stat-label">정답</div></div>
+      <div class="result-stat"><div class="result-stat-num" style="color:var(--red)">${wrong}</div><div class="result-stat-label">오답</div></div>
+      <div class="result-stat"><div class="result-stat-num" style="color:var(--hint)">${skip}</div><div class="result-stat-label">미응답</div></div>
+      <div class="result-stat"><div class="result-stat-num">${formatTime(elapsed)}</div><div class="result-stat-label">소요시간</div></div>
+    </div>
+
+    <div style="padding:20px 20px 8px"><div style="font-size:15px;font-weight:700">유형별 정답률</div></div>
+    <div class="card" style="padding:16px 20px">${typeBarsHtml}</div>
+
+    ${reviewHtml}
+
+    <div style="padding:20px;display:flex;gap:10px">
+      <button class="btn btn-primary" style="flex:1" onclick="retryExam()">다시 풀기</button>
+      <button class="btn btn-ghost" style="flex:1" onclick="goHome()">홈으로</button>
+    </div>
+    <div style="height:40px"></div>
+  `;
+
+  // Animate score countup
+  animateScore(score,offset);
+  // XP float
+  setTimeout(()=>{
+    const xf=document.createElement('div');
+    xf.className='xp-float';
+    xf.textContent=`+${xpGain} XP`;
+    document.body.appendChild(xf);
+    setTimeout(()=>xf.remove(),1600);
+  },800);
+}
+
+function animateScore(target,ringOffset){
+  const el=document.getElementById('score-num');
+  const ring=document.getElementById('score-ring');
+  const circumference=2*Math.PI*68;
+  let current=0;
+  const step=Math.max(1,Math.ceil(target/40));
+  const iv=setInterval(()=>{
+    current=Math.min(current+step,target);
+    el.textContent=current;
+    const pct=current/currentMeta.total;
+    ring.style.strokeDashoffset=circumference*(1-pct);
+    if(current>=target){
+      clearInterval(iv);
+      if(target>=80)playCorrect();
+    }
+  },30);
+}
+
+function toggleReview(idx){
+  const det=document.getElementById(`rev-detail-${idx}`);
+  const arrow=document.getElementById(`rev-arrow-${idx}`);
+  if(det.classList.contains('open')){
+    det.classList.remove('open');
+    det.style.display='none';
+    arrow.style.transform='rotate(0deg)';
+  }else{
+    det.classList.add('open');
+    det.style.display='block';
+    arrow.style.transform='rotate(180deg)';
+  }
+}
+
+function fireConfetti(){
+  const colors=['#3182F6','#00C072','#F04452','#F59E0B','#8B5CF6','#FF6B35'];
+  for(let i=0;i<40;i++){
+    const el=document.createElement('div');
+    el.className='confetti-piece';
+    el.style.left=Math.random()*100+'%';
+    el.style.background=colors[Math.floor(Math.random()*colors.length)];
+    el.style.animationDelay=Math.random()*1+'s';
+    el.style.width=(6+Math.random()*8)+'px';
+    el.style.height=(6+Math.random()*8)+'px';
+    el.style.borderRadius=Math.random()>.5?'50%':'2px';
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),3500);
+  }
+}
+
+function retryExam(){
+  haptic('tap');
+  renderInfo();
+  showScreen('scr-info');
+}
+
+function goHome(){
+  haptic('tap');
+  currentCur=null;currentWeek=null;
+  showScreen('scr-select');
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   URL Param Auto-Select
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function initFromParams(){
+  const c=params.get('c');
+  const w=params.get('w');
+  const mode=params.get('mode');
+
+  if(c&&TEST_MANIFEST[c]){
+    currentCur=c;
+    if(w){
+      const weekNum=parseInt(w);
+      const weekInfo=TEST_MANIFEST[c].weeks.find(wk=>wk.w===weekNum);
+      if(weekInfo&&weekInfo.available){
+        currentWeek=weekNum;
+        loadTest(c,weekNum).then(data=>{
+          currentMeta=data;
+          questions=data.questions;
+          renderInfo();
+          showScreen('scr-info');
+          if(mode==='real'||mode==='practice'){
+            // Auto-fill name from profile
+            setTimeout(()=>{
+              const p=getProfile();
+              if(p.name) startExam(mode);
+            },100);
+          }
+        }).catch(e=>{
+          showToast(e.message);
+          renderCurList();
+        });
+        return;
+      }else{
+        renderWeekList();
+        showScreen('scr-weeks');
+        return;
+      }
+    }else{
+      renderWeekList();
+      showScreen('scr-weeks');
+      return;
+    }
+  }
+  renderCurList();
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Dark Mode Detection
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+if(window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches){
+  document.documentElement.setAttribute('data-theme','dark');
+}
+window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change',e=>{
+  document.documentElement.setAttribute('data-theme',e.matches?'dark':'light');
+});
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Init
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+initFromParams();
+</script>
+</body>
+</html>
