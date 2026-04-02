@@ -139,11 +139,11 @@ input,select{font-family:inherit}
 .page{animation:pageEnter .28s var(--ease-out)}
 .page.slide-left{animation:slideLeft .3s var(--ease-out)}
 .page.slide-right{animation:slideRight .3s var(--ease-out)}
-.page.tab-swap{animation:tabFade .2s var(--ease-out)}
+.page.tab-swap{animation:tabSwap .12s ease-out}
 @keyframes pageEnter{from{opacity:.8;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 @keyframes slideLeft{from{transform:translateX(100%)}to{transform:translateX(0)}}
 @keyframes slideRight{from{transform:translateX(-40%);opacity:.9}to{transform:translateX(0);opacity:1}}
-@keyframes tabFade{from{opacity:.7}to{opacity:1}}
+@keyframes tabSwap{from{opacity:.96}to{opacity:1}}
 
 /* ━━ Skeleton Loading ━━ */
 .skeleton{background:var(--g100);border-radius:var(--r-md);position:relative;overflow:hidden}
@@ -490,6 +490,57 @@ input,select{font-family:inherit}
 const SUPABASE_URL='https://awtqtubyymjtkhrigqhw.supabase.co';
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF3dHF0dWJ5eW1qdGtocmlncWh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMTUxNjIsImV4cCI6MjA4ODY5MTE2Mn0.HgxHj2MDLJpxEEN4hNdNOy5zBCWlHD37BPQjmEdsWa0';
 const supa=window.supabase?window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY):null;
+
+// ━━ Student ID (DB UUID) ━━
+// URL ?sid=UUID or localStorage
+(function(){const u=new URLSearchParams(location.search);const sid=u.get('sid');if(sid){localStorage.setItem('el_sid',sid);}})();
+function getStudentId(){return localStorage.getItem('el_sid')||null;}
+
+// ━━ 오늘의 숙제 (서버에서 가져오기) ━━
+let _homeworkCache=null;let _homeworkLoading=false;
+async function fetchTodayHomework(){
+  const sid=getStudentId();if(!sid||_homeworkLoading)return _homeworkCache;
+  _homeworkLoading=true;
+  try{
+    const res=await fetch('https://yhg-home.vercel.app/api/homework/today?student_id='+sid);
+    if(!res.ok){_homeworkLoading=false;return null;}
+    _homeworkCache=await res.json();
+  }catch(e){console.warn('homework fetch error',e);}
+  _homeworkLoading=false;
+  return _homeworkCache;
+}
+
+function renderHomeworkSection(){
+  const el=document.getElementById('homeworkArea');if(!el)return;
+  const hw=_homeworkCache;
+  if(!hw||!hw.items||hw.items.length===0){
+    el.innerHTML='<div style="padding:12px 16px;font-size:13px;color:var(--hint);text-align:center">등록된 숙제가 없어요</div>';
+    return;
+  }
+  let h='';
+  hw.items.forEach(function(item){
+    const isDone=item.completed;
+    const isVocab=item.type==='단어';
+    const units=item.requiredUnits||[];
+    const sid=getStudentId();
+    const vocabLink=isVocab&&units.length?'https://yhg-app.vercel.app/vocab.html?sid='+sid+'&units='+units.join(',')+'&mode=test&locked=1':'';
+    h+='<div style="padding:14px 0;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--divider)">';
+    h+='<div style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;'+(isDone?'background:var(--green-l);color:var(--green)':'background:var(--g100);color:var(--hint)')+'">'+( isDone?'✓':'○')+'</div>';
+    h+='<div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--text)">'+item.title+'</div>';
+    if(isVocab&&units.length)h+='<div style="font-size:11px;color:var(--sub);margin-top:2px">'+units.join(',')+'과 · '+item.passScore+'점 이상 통과</div>';
+    else if(item.guide)h+='<div style="font-size:11px;color:var(--sub);margin-top:2px">'+item.guide.slice(0,40)+'</div>';
+    h+='</div>';
+    if(isVocab&&!isDone&&vocabLink){
+      h+='<button onclick="location.href=\''+vocabLink+'\'" style="padding:6px 14px;background:var(--blue);color:white;border:none;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">시험보기</button>';
+    }else if(isDone&&item.score){
+      h+='<span style="font-size:13px;font-weight:800;color:var(--green)">'+item.score+'점</span>';
+    }
+    h+='</div>';
+  });
+  const allDone=hw.items.every(function(i){return i.completed;});
+  if(allDone)h+='<div style="text-align:center;padding:12px 0;font-size:13px;font-weight:700;color:var(--green)">오늘 숙제 올클리어! 🎉</div>';
+  el.innerHTML=h;
+}
 
 const FALLBACK_FULL_PASSAGE=`Be Proud of Who You Are
 Laura Thompson
@@ -1575,18 +1626,18 @@ function R(){({login:rLogin,home:rHome,learn:rLearn,record:rRecord,my:rMy,select
   const tabScreens=['home','learn','record','my'];
   const tb=$('tabBar');
   if(tabScreens.includes(S.scr)){tb.style.display='';document.querySelectorAll('.tab-item').forEach(t=>{t.classList.toggle('active',t.id==='tab_'+S.scr);});
-    // Staggered reveal + count-up for tab pages
-    requestAnimationFrame(()=>{const cards=app.querySelectorAll('.card,.sec-label');cards.forEach((c,i)=>{c.classList.add('reveal');setTimeout(()=>c.classList.add('show'),30*i);});setTimeout(applyCountUps,150);});
+    // Instant reveal + count-up for tab pages
+    applyCountUps();
   }else{tb.style.display='none';}}
 function switchTab(tab){if(S.scr===tab)return;haptic('tap');S.scr=tab;S.dir='tab';R();
   // Tab bounce animation
   const ti=$('tab_'+tab);if(ti){ti.classList.remove('tab-bounce');void ti.offsetWidth;ti.classList.add('tab-bounce');ti.addEventListener('animationend',()=>ti.classList.remove('tab-bounce'),{once:true});}
-  // Staggered reveal for cards
-  requestAnimationFrame(()=>{const cards=app.querySelectorAll('.card,.sec-label');cards.forEach((c,i)=>{c.classList.add('reveal');setTimeout(()=>c.classList.add('show'),30*i);});setTimeout(applyCountUps,150);});
+  // Instant reveal for cards
+  applyCountUps();
 }
 
 // ━━ Count-up Animation ━━
-function countUp(el,target,duration=800){
+function countUp(el,target,duration=400){
   if(!el)return;const start=performance.now();const from=0;
   function step(now){const p=Math.min((now-start)/duration,1);const eased=1-Math.pow(1-p,3);// easeOutCubic
   el.textContent=Math.round(from+(target-from)*eased);if(p<1)requestAnimationFrame(step);}
@@ -1979,116 +2030,146 @@ function rHome(){setBottom(null);
   const totalQs=hist.reduce((a,r)=>a+(r.ok||0)+(r.no||0),0);
   const wr=getWeeklyReport();
   const ds=getDailyState();const today=new Date().toISOString().slice(0,10);const dailyDone=ds.date===today&&ds.completed;
-  // Mark daily visit attendance (once per session)
   if(!sessionStorage.getItem('el_visited')){sessionStorage.setItem('el_visited','1');markAttend();}
+  const isDark=localStorage.getItem('el_theme')==='dark';
+
+  // Greeting based on time
+  const hour=new Date().getHours();
+  const greetIcon=hour<6?'🌙':hour<12?'☀️':hour<18?'🌤️':'🌙';
+  const greetText=hour<6?'새벽에도 공부하는':hour<12?'좋은 아침이에요':hour<18?'오늘도 화이팅':hour<21?'저녁 시간 알차게':'늦은 밤까지 열심히';
 
   app.innerHTML=`<div class="page">
-    <!-- 1. Greeting Header -->
-    <div style="padding:24px 20px 0">
+    <!-- Hero Header -->
+    <div style="padding:28px 20px 20px;background:linear-gradient(180deg,${isDark?'rgba(49,130,246,.08)':'rgba(49,130,246,.04)'} 0%,transparent 100%)">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <div>
-          <div style="font-size:14px;color:var(--sub);font-weight:500">안녕하세요 👋</div>
-          <div class="t-heading" style="margin-top:2px">${esc(profile.name)}님</div>
+          <div style="font-size:13px;color:var(--sub);font-weight:500;display:flex;align-items:center;gap:4px"><span>${greetIcon}</span> ${greetText}</div>
+          <div style="font-size:22px;font-weight:800;color:var(--text);margin-top:4px;letter-spacing:-.3px">${esc(profile.name)}님</div>
         </div>
-        <button onclick="toggleTheme();R()" style="width:40px;height:40px;border:1.5px solid var(--border);border-radius:50%;background:var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px">${localStorage.getItem('el_theme')==='dark'?'☀️':'🌙'}</button>
+        <button onclick="toggleTheme();R()" style="width:38px;height:38px;border:none;border-radius:50%;background:var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;box-shadow:var(--sh-sm);transition:transform .15s var(--ease-snap)" ontouchstart="this.style.transform='scale(.9)'" ontouchend="this.style.transform=''">${isDark?'☀️':'🌙'}</button>
+      </div>
+
+      <!-- Inline Stats Row -->
+      <div style="display:flex;gap:6px;margin-top:16px">
+        <div style="flex:1;padding:12px 10px;background:var(--card);border-radius:var(--r-md);box-shadow:var(--sh-sm);text-align:center">
+          <div style="font-size:20px;font-weight:900;color:var(--blue);line-height:1" data-count="${xd.lv}">0</div>
+          <div style="font-size:9px;color:var(--sub);margin-top:4px;font-weight:600;letter-spacing:.5px">LEVEL</div>
+          <div style="height:3px;background:var(--g100);border-radius:2px;margin-top:5px;overflow:hidden"><div style="height:100%;width:${xpPct}%;background:linear-gradient(90deg,var(--blue),#60A5FA);border-radius:2px;transition:width .6s var(--ease)"></div></div>
+        </div>
+        <div style="flex:1;padding:12px 10px;background:var(--card);border-radius:var(--r-md);box-shadow:var(--sh-sm);text-align:center">
+          <div style="font-size:20px;font-weight:900;color:${sk.count>0?'#FF6B35':'var(--hint)'};line-height:1">${sk.count>0?sk.count:'—'}</div>
+          <div style="font-size:9px;color:var(--sub);margin-top:4px;font-weight:600;letter-spacing:.5px">${sk.count>0?'🔥 STREAK':'STREAK'}</div>
+        </div>
+        <div style="flex:1;padding:12px 10px;background:var(--card);border-radius:var(--r-md);box-shadow:var(--sh-sm);text-align:center">
+          <div style="font-size:20px;font-weight:900;color:var(--green);line-height:1" data-count="${totalTests}">0</div>
+          <div style="font-size:9px;color:var(--sub);margin-top:4px;font-weight:600;letter-spacing:.5px">TESTS</div>
+        </div>
       </div>
     </div>
 
-    <!-- 2. D-day -->
-    ${(()=>{const suneung=getSuneungDate();const ddays=getDdays();const hasDday=ddays.mid||ddays.fin;return `
-    <div class="card" style="padding:16px 20px;margin-top:12px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${hasDday?'8px':'0'}">
-        <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:16px">📅</span>
-          <span style="font-size:14px;font-weight:700;color:var(--text)">수능</span>
-          <span style="font-size:12px;color:var(--sub)">${suneung.getFullYear()}.${suneung.getMonth()+1}.${suneung.getDate()}</span>
+    <!-- D-day Cards -->
+    ${(()=>{const suneung=getSuneungDate();const ddays=getDdays();return `
+    <div style="padding:0 20px;margin-bottom:8px">
+      <div style="display:flex;gap:8px">
+        <div style="flex:1;padding:14px;background:var(--card);border-radius:var(--r-md);box-shadow:var(--sh-sm);display:flex;align-items:center;justify-content:space-between">
+          <div><div style="font-size:10px;color:var(--sub);font-weight:600;letter-spacing:.5px">수능</div><div style="font-size:11px;color:var(--hint);margin-top:1px">${suneung.getMonth()+1}.${suneung.getDate()}</div></div>
+          <div style="font-size:16px;font-weight:900;color:var(--red)">${ddayStr(suneung)}</div>
         </div>
-        <span style="font-size:15px;font-weight:800;color:var(--red)">${ddayStr(suneung)}</span>
+        ${ddays.mid?`<div style="flex:1;padding:14px;background:var(--card);border-radius:var(--r-md);box-shadow:var(--sh-sm);display:flex;align-items:center;justify-content:space-between">
+          <div><div style="font-size:10px;color:var(--sub);font-weight:600;letter-spacing:.5px">중간</div><div style="font-size:11px;color:var(--hint);margin-top:1px">${new Date(ddays.mid).getMonth()+1}.${new Date(ddays.mid).getDate()}</div></div>
+          <div style="font-size:16px;font-weight:900;color:var(--blue)">${ddayStr(new Date(ddays.mid))}</div>
+        </div>`:''}
+        ${ddays.fin?`<div style="flex:1;padding:14px;background:var(--card);border-radius:var(--r-md);box-shadow:var(--sh-sm);display:flex;align-items:center;justify-content:space-between">
+          <div><div style="font-size:10px;color:var(--sub);font-weight:600;letter-spacing:.5px">기말</div><div style="font-size:11px;color:var(--hint);margin-top:1px">${new Date(ddays.fin).getMonth()+1}.${new Date(ddays.fin).getDate()}</div></div>
+          <div style="font-size:16px;font-weight:900;color:var(--blue)">${ddayStr(new Date(ddays.fin))}</div>
+        </div>`:''}
       </div>
-      ${ddays.mid?`<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:13px;font-weight:600;color:var(--text)">중간고사</span><span style="font-size:12px;color:var(--sub)">${new Date(ddays.mid).getMonth()+1}.${new Date(ddays.mid).getDate()}</span></div><span style="font-size:13px;font-weight:800;color:var(--blue)">${ddayStr(new Date(ddays.mid))}</span></div>`:''}
-      ${ddays.fin?`<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:13px;font-weight:600;color:var(--text)">기말고사</span><span style="font-size:12px;color:var(--sub)">${new Date(ddays.fin).getMonth()+1}.${new Date(ddays.fin).getDate()}</span></div><span style="font-size:13px;font-weight:800;color:var(--blue)">${ddayStr(new Date(ddays.fin))}</span></div>`:''}
     </div>`;})()}
 
-    <!-- 출석 캘린더 제거됨 -->
-
-    <!-- 4. 나의 학습 현황 (간결) -->
-    <div style="padding:0 20px;display:flex;gap:8px;margin-bottom:4px">
-      <div style="flex:1;padding:14px;background:var(--card);border-radius:var(--r-lg);box-shadow:var(--sh-sm);text-align:center">
-        <div style="font-size:22px;font-weight:900;color:var(--blue)">Lv.${xd.lv}</div>
-        <div style="font-size:10px;color:var(--sub);margin-top:2px;font-weight:600">${lvName(xd.lv)}</div>
-        <div style="height:4px;background:var(--g100);border-radius:2px;margin-top:6px;overflow:hidden"><div style="height:100%;width:${xpPct}%;background:var(--blue);border-radius:2px"></div></div>
-      </div>
-      <div style="flex:1;padding:14px;background:var(--card);border-radius:var(--r-lg);box-shadow:var(--sh-sm);text-align:center">
-        <div style="font-size:22px;font-weight:900;color:${sk.count>0?'var(--red)':'var(--hint)'}">${sk.count>0?'🔥'+sk.count:'—'}</div>
-        <div style="font-size:10px;color:var(--sub);margin-top:2px;font-weight:600">연속 학습</div>
-      </div>
-      <div style="flex:1;padding:14px;background:var(--card);border-radius:var(--r-lg);box-shadow:var(--sh-sm);text-align:center">
-        <div style="font-size:22px;font-weight:900;color:var(--green)">${totalTests}</div>
-        <div style="font-size:10px;color:var(--sub);margin-top:2px;font-weight:600">총 응시</div>
-      </div>
-    </div>
-
-    <!-- 5. 줌테스트 -->
-    <div class="sec-label">줌테스트</div>
-    <div class="card" style="padding:0;overflow:hidden">
-      <button onclick="S.scr='zoomhub';S.dir='fwd';R()" style="width:100%;padding:18px 20px;border:none;background:none;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background=''">
-        <div style="width:44px;height:44px;background:var(--blue-l);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">📝</div>
+    <!-- Daily Challenge -->
+    ${!dailyDone?`
+    <div style="margin:0 20px 10px;padding:18px;background:linear-gradient(135deg,#3182F6 0%,#1B64DA 100%);border-radius:var(--r-lg);cursor:pointer;box-shadow:0 4px 16px rgba(49,130,246,.25)" onclick="startDailyQuiz()">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="width:44px;height:44px;background:rgba(255,255,255,.2);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;backdrop-filter:blur(8px)">⚡</div>
         <div style="flex:1">
-          <div style="font-size:15px;font-weight:700;color:var(--text)">줌테스트</div>
-          <div style="font-size:12px;color:var(--sub);margin-top:2px">연습 · 실전 · 스케줄 신청</div>
+          <div style="font-size:15px;font-weight:700;color:white">오늘의 단어퀴즈</div>
+          <div style="font-size:12px;color:rgba(255,255,255,.75);margin-top:2px">매일 10문제 · 지금 바로 도전!</div>
         </div>
-        <span style="color:var(--hint);font-size:18px;font-weight:300">›</span>
+        <div style="width:32px;height:32px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center"><span style="color:white;font-size:14px;font-weight:700">→</span></div>
+      </div>
+    </div>`:`
+    <div style="margin:0 20px 10px;padding:16px 18px;background:var(--card);border-radius:var(--r-lg);box-shadow:var(--sh-sm);display:flex;align-items:center;gap:14px">
+      <div style="width:40px;height:40px;background:var(--green-l);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px">✅</div>
+      <div style="flex:1"><div style="font-size:14px;font-weight:700;color:var(--text)">오늘의 퀴즈 완료!</div><div style="font-size:12px;color:var(--green);font-weight:600;margin-top:1px">${ds.score}점 달성</div></div>
+    </div>`}
+
+    <!-- 오늘의 숙제 -->
+    ${getStudentId()?`
+    <div class="sec-label" style="padding-top:16px;display:flex;align-items:center;justify-content:space-between"><span>오늘의 숙제</span><span style="font-size:11px;color:var(--hint);font-weight:500">${_homeworkCache?_homeworkCache.week+'주차 Day'+_homeworkCache.day:''}</span></div>
+    <div class="card" style="padding:4px 18px" id="homeworkArea">
+      <div style="text-align:center;padding:14px;font-size:13px;color:var(--hint)">숙제를 불러오는 중...</div>
+    </div>`:''}
+
+    <!-- 줌테스트 -->
+    <div class="card" style="padding:0;overflow:hidden">
+      <button onclick="S.scr='zoomhub';S.dir='fwd';R()" style="width:100%;padding:16px 20px;border:none;background:none;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;transition:background .12s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background=''">
+        <div style="width:42px;height:42px;background:linear-gradient(135deg,#EEF4FF,#DBEAFE);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">📝</div>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:700;color:var(--text)">줌테스트</div>
+          <div style="font-size:11px;color:var(--sub);margin-top:2px">연습 · 실전 · 스케줄 신청</div>
+        </div>
+        <span style="color:var(--g300);font-size:16px">›</span>
       </button>
     </div>
     ${(()=>{
       const now=new Date();const isSunAfter10=now.getDay()===0&&now.getHours()>=22;
       const submitted=getThisWeekSurvey();
-      return (isSunAfter10&&!submitted)?'<div style="margin:8px 20px 0;padding:12px 16px;background:var(--red-l);border-radius:var(--r-md);display:flex;align-items:center;gap:10px"><span style="font-size:18px">🚨</span><div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--red)">스케줄 신청이 오픈되었습니다!</div><div style="font-size:11px;color:var(--sub);margin-top:2px">원하는 요일에 테스트보려면 빠르게 신청하세요</div></div></div>':'';
+      return (isSunAfter10&&!submitted)?'<div style="margin:4px 20px 8px;padding:12px 16px;background:var(--red-l);border-radius:var(--r-md);display:flex;align-items:center;gap:10px"><span style="font-size:16px">🚨</span><div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--red)">스케줄 신청 오픈!</div><div style="font-size:11px;color:var(--sub);margin-top:1px">원하는 요일에 테스트보려면 빠르게 신청하세요</div></div></div>':'';
     })()}
 
-    <!-- 6. 빠른 링크 -->
-    <div class="sec-label">우리 학원</div>
+    <!-- 우리 학원 -->
+    <div class="sec-label" style="padding-top:20px">우리 학원</div>
     <div style="padding:0 20px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <button onclick="window.open('https://engeng.liveklass.com/','_blank')" style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--card);border-radius:var(--r-lg);border:none;cursor:pointer;box-shadow:var(--sh-sm);text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background='var(--card)'">
-        <div style="width:36px;height:36px;background:var(--blue-l);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🎓</div>
+      <button onclick="window.open('https://engeng.liveklass.com/','_blank')" style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--card);border-radius:var(--r-md);border:none;cursor:pointer;box-shadow:var(--sh-sm);text-align:left;transition:transform .12s var(--ease-snap)" ontouchstart="this.style.transform='scale(.97)'" ontouchend="this.style.transform=''">
+        <div style="width:34px;height:34px;background:linear-gradient(135deg,#EEF4FF,#DBEAFE);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🎓</div>
         <div><div style="font-size:13px;font-weight:700;color:var(--text)">수강신청</div><div style="font-size:10px;color:var(--hint);margin-top:1px">LiveKlass</div></div>
       </button>
-      <button onclick="window.open('http://pf.kakao.com/_xoxoGfG','_blank')" style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--card);border-radius:var(--r-lg);border:none;cursor:pointer;box-shadow:var(--sh-sm);text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background='var(--card)'">
-        <div style="width:36px;height:36px;background:var(--yellow-l);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">💬</div>
+      <button onclick="window.open('http://pf.kakao.com/_xoxoGfG','_blank')" style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--card);border-radius:var(--r-md);border:none;cursor:pointer;box-shadow:var(--sh-sm);text-align:left;transition:transform .12s var(--ease-snap)" ontouchstart="this.style.transform='scale(.97)'" ontouchend="this.style.transform=''">
+        <div style="width:34px;height:34px;background:linear-gradient(135deg,#FFF8E1,#FEF3C7);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">💬</div>
         <div><div style="font-size:13px;font-weight:700;color:var(--text)">카카오톡</div><div style="font-size:10px;color:var(--hint);margin-top:1px">상담하기</div></div>
       </button>
-      <button onclick="window.open('https://discord.gg/hBgphumrca','_blank')" style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--card);border-radius:var(--r-lg);border:none;cursor:pointer;box-shadow:var(--sh-sm);text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background='var(--card)'">
-        <div style="width:36px;height:36px;background:var(--purple-l);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🎮</div>
+      <button onclick="window.open('https://discord.gg/hBgphumrca','_blank')" style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--card);border-radius:var(--r-md);border:none;cursor:pointer;box-shadow:var(--sh-sm);text-align:left;transition:transform .12s var(--ease-snap)" ontouchstart="this.style.transform='scale(.97)'" ontouchend="this.style.transform=''">
+        <div style="width:34px;height:34px;background:linear-gradient(135deg,#F3EEFF,#EDE9FE);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🎮</div>
         <div><div style="font-size:13px;font-weight:700;color:var(--text)">디스코드</div><div style="font-size:10px;color:var(--hint);margin-top:1px">커뮤니티</div></div>
       </button>
-      <button onclick="window.open('https://cafe.naver.com/englishfree2','_blank')" style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--card);border-radius:var(--r-lg);border:none;cursor:pointer;box-shadow:var(--sh-sm);text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background='var(--card)'">
-        <div style="width:36px;height:36px;background:var(--green-l);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">☕</div>
+      <button onclick="window.open('https://cafe.naver.com/englishfree2','_blank')" style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--card);border-radius:var(--r-md);border:none;cursor:pointer;box-shadow:var(--sh-sm);text-align:left;transition:transform .12s var(--ease-snap)" ontouchstart="this.style.transform='scale(.97)'" ontouchend="this.style.transform=''">
+        <div style="width:34px;height:34px;background:linear-gradient(135deg,#E8FAF0,#D1FAE5);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">☕</div>
         <div><div style="font-size:13px;font-weight:700;color:var(--text)">네이버카페</div><div style="font-size:10px;color:var(--hint);margin-top:1px">공지·자료</div></div>
       </button>
     </div>
 
-    <!-- 7. 입시 뉴스 -->
+    <!-- 입시 뉴스 -->
     <div class="sec-label">입시 뉴스</div>
     <div class="card" style="padding:4px 20px" id="newsArea">
       <div style="text-align:center;padding:16px;font-size:13px;color:var(--hint)">뉴스를 불러오는 중...</div>
     </div>
 
-    <!-- 7. 내신핏 전환 배너 -->
-    <div class="card" style="padding:16px 20px;margin-top:20px;background:linear-gradient(135deg,#F59E0B 0%,#D97706 100%);border-radius:var(--r-lg);cursor:pointer" onclick="window.open('https://jacob-englishfree.github.io/naesinfit-tests/','_blank')">
+    <!-- 내신핏 배너 -->
+    <div style="margin:12px 20px 0;padding:16px 18px;background:linear-gradient(135deg,#F59E0B 0%,#D97706 100%);border-radius:var(--r-lg);cursor:pointer;box-shadow:0 4px 16px rgba(245,158,11,.2)" onclick="window.open('https://jacob-englishfree.github.io/naesinfit-tests/','_blank')">
       <div style="display:flex;align-items:center;gap:14px">
-        <div style="font-size:28px">📝</div>
+        <div style="font-size:24px">📝</div>
         <div style="flex:1">
-          <div style="font-size:14px;font-weight:800;color:white">내신 기간이라면?</div>
-          <div style="font-size:12px;color:rgba(255,255,255,.8);margin-top:2px">내신핏으로 전환하여 내신 대비하기 →</div>
+          <div style="font-size:13px;font-weight:800;color:white">내신 기간이라면?</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.8);margin-top:2px">내신핏으로 전환하여 내신 대비하기 →</div>
         </div>
       </div>
     </div>
 
-    <!-- 7. Footer -->
-    <div style="text-align:center;padding:24px 20px 12px;font-size:11px;color:var(--hint)">© 영어해방공식 · 온라인 영어학원</div>
+    <div style="text-align:center;padding:20px 20px 8px;font-size:10px;color:var(--hint)">© 영어해방공식 · 온라인 영어학원</div>
     <div class="tab-spacer"></div>
   </div>`;
   setTimeout(renderNewsSection,100);
+  if(getStudentId()){fetchTodayHomework().then(renderHomeworkSection);}
 }
 
 // ━━ SURVEY (줌 테스트 스케줄 설문) ━━
@@ -2363,87 +2444,72 @@ function rLearn(){setBottom(null);
   if(!profile.name.trim()){S.scr='login';R();return;}
   const ds=getDailyState();const today=new Date().toISOString().slice(0,10);const done=ds.date===today&&ds.completed;
   const wrongCount=getWrong().length;
+  const gamePlays=getGamePlays();
 
   app.innerHTML=`<div class="page">
-    <div style="padding:24px 20px 0">
-      <div class="t-heading">학습</div>
-      <div class="t-caption c-sub" style="margin-top:2px">매일 꾸준히 영어를 해방시키자</div>
+    <div style="padding:28px 20px 0">
+      <div style="font-size:22px;font-weight:800;color:var(--text);letter-spacing:-.3px">학습</div>
+      <div style="font-size:12px;color:var(--sub);margin-top:3px;font-weight:500">매일 꾸준히 영어를 해방시키자</div>
     </div>
 
-    <!-- Daily Vocab Quiz -->
-    <div class="sec-label">오늘의 학습</div>
-    <div class="card" style="padding:0;overflow:hidden">
-      <button onclick="startDailyQuiz()" style="width:100%;padding:16px 20px;border:none;background:none;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background=''">
-        <div style="width:44px;height:44px;background:${done?'var(--green-l)':'var(--blue-l)'};border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">${done?'✅':'⚡'}</div>
-        <div style="flex:1">
-          <div style="font-size:15px;font-weight:700;color:var(--text)">${done?'오늘의 단어퀴즈 완료':'오늘의 단어퀴즈'}</div>
-          <div style="font-size:12px;color:var(--sub);margin-top:2px">${done?ds.score+'점 달성!':'매일 10문제 영단어 퀴즈'}</div>
+    <!-- Daily Challenge -->
+    <div style="padding:16px 20px 0">
+      ${!done?`
+      <div style="padding:18px;background:linear-gradient(135deg,#3182F6,#1B64DA);border-radius:var(--r-lg);cursor:pointer;box-shadow:0 4px 16px rgba(49,130,246,.25)" onclick="startDailyQuiz()">
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="width:44px;height:44px;background:rgba(255,255,255,.18);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;backdrop-filter:blur(8px)">⚡</div>
+          <div style="flex:1"><div style="font-size:15px;font-weight:700;color:white">오늘의 단어퀴즈</div><div style="font-size:12px;color:rgba(255,255,255,.75);margin-top:2px">매일 10문제 · 지금 바로 도전!</div></div>
+          <div style="width:32px;height:32px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center"><span style="color:white;font-size:14px;font-weight:700">→</span></div>
         </div>
-        ${done?'':'<span style="color:var(--blue);font-size:13px;font-weight:700">도전 →</span>'}
-      </button>
+      </div>`:`
+      <div style="padding:16px 18px;background:var(--card);border-radius:var(--r-lg);box-shadow:var(--sh-sm);display:flex;align-items:center;gap:14px">
+        <div style="width:40px;height:40px;background:var(--green-l);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px">✅</div>
+        <div style="flex:1"><div style="font-size:14px;font-weight:700;color:var(--text)">오늘의 퀴즈 완료!</div><div style="font-size:12px;color:var(--green);font-weight:600;margin-top:1px">${ds.score}점 달성</div></div>
+      </div>`}
     </div>
 
     ${wrongCount?`
-    <!-- Wrong Answer Review -->
-    <div class="card" style="padding:0;overflow:hidden;margin-top:2px">
-      <button onclick="startWrongReview()" style="width:100%;padding:16px 20px;border:none;background:none;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background=''">
-        <div style="width:44px;height:44px;background:var(--red-l);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🔄</div>
-        <div style="flex:1">
-          <div style="font-size:15px;font-weight:700;color:var(--text)">틀린 문제 ${wrongCount}개 복습</div>
-          <div style="font-size:12px;color:var(--sub);margin-top:2px">오답을 다시 풀어 완벽하게 마스터</div>
-        </div>
-        <span style="color:var(--hint);font-size:18px;font-weight:300">›</span>
+    <div class="card" style="padding:0;overflow:hidden;margin-top:8px">
+      <button onclick="startWrongReview()" style="width:100%;padding:16px 20px;border:none;background:none;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;transition:transform .12s var(--ease-snap)" ontouchstart="this.style.transform='scale(.98)'" ontouchend="this.style.transform=''">
+        <div style="width:42px;height:42px;background:var(--red-l);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🔄</div>
+        <div style="flex:1"><div style="font-size:14px;font-weight:700;color:var(--text)">틀린 문제 복습</div><div style="font-size:11px;color:var(--sub);margin-top:2px">${wrongCount}개 · 다시 풀어 완벽하게</div></div>
+        <span style="font-size:12px;font-weight:700;color:var(--red);background:var(--red-l);padding:4px 10px;border-radius:12px">${wrongCount}</span>
       </button>
     </div>`:''}
 
-    <!-- Zoom Test Prep -->
-    <div class="sec-label">줌 테스트 대비</div>
+    <!-- 줌 테스트 대비 -->
+    <div class="sec-label" style="padding-top:20px">줌 테스트 대비</div>
     <div class="card" style="padding:0;overflow:hidden">
-      <button onclick="startZoomPrep()" style="width:100%;padding:16px 20px;border:none;background:none;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background=''">
-        <div style="width:44px;height:44px;background:var(--purple-l);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🎯</div>
-        <div style="flex:1">
-          <div style="font-size:15px;font-weight:700;color:var(--text)">줌 테스트 모의연습</div>
-          <div style="font-size:12px;color:var(--sub);margin-top:2px">실제와 동일한 20문제 · 80점 통과</div>
-        </div>
-        <span style="color:var(--purple);font-size:13px;font-weight:700">도전 →</span>
+      <button onclick="startZoomPrep()" style="width:100%;padding:16px 20px;border:none;background:none;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;transition:transform .12s var(--ease-snap)" ontouchstart="this.style.transform='scale(.98)'" ontouchend="this.style.transform=''">
+        <div style="width:42px;height:42px;background:linear-gradient(135deg,#F3EEFF,#EDE9FE);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🎯</div>
+        <div style="flex:1"><div style="font-size:14px;font-weight:700;color:var(--text)">줌 테스트 모의연습</div><div style="font-size:11px;color:var(--sub);margin-top:2px">실제와 동일한 20문제 · 80점 통과</div></div>
+        <span style="font-size:12px;font-weight:700;color:var(--purple);background:var(--purple-l);padding:4px 10px;border-radius:12px">도전</span>
       </button>
     </div>
 
-    <!-- Speed Quiz & Flashcard -->
+    <!-- 더 많은 학습 -->
     <div class="sec-label">더 많은 학습</div>
     <div class="card" style="padding:0;overflow:hidden">
-      <button onclick="startSpeedQuiz()" style="width:100%;padding:16px 20px;border:none;background:none;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background=''">
-        <div style="width:44px;height:44px;background:var(--purple-l);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">⚡</div>
-        <div style="flex:1">
-          <div style="font-size:15px;font-weight:700;color:var(--text)">스피드 퀴즈</div>
-          <div style="font-size:12px;color:var(--sub);margin-top:2px">30초 안에 단어 최대한 많이 맞추기</div>
-        </div>
-        <span style="color:var(--purple);font-size:13px;font-weight:700">도전 →</span>
+      <button onclick="startSpeedQuiz()" style="width:100%;padding:16px 20px;border:none;background:none;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;transition:transform .12s var(--ease-snap)" ontouchstart="this.style.transform='scale(.98)'" ontouchend="this.style.transform=''">
+        <div style="width:42px;height:42px;background:linear-gradient(135deg,#F3EEFF,#EDE9FE);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">⚡</div>
+        <div style="flex:1"><div style="font-size:14px;font-weight:700;color:var(--text)">스피드 퀴즈</div><div style="font-size:11px;color:var(--sub);margin-top:2px">30초 안에 최대한 많이 맞추기</div></div>
+        <span style="color:var(--g300);font-size:16px">›</span>
       </button>
       <div style="height:1px;background:var(--divider);margin:0 20px"></div>
-      <button onclick="startFlashcard()" style="width:100%;padding:16px 20px;border:none;background:none;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background=''">
-        <div style="width:44px;height:44px;background:var(--yellow-l);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🃏</div>
-        <div style="flex:1">
-          <div style="font-size:15px;font-weight:700;color:var(--text)">플래시카드</div>
-          <div style="font-size:12px;color:var(--sub);margin-top:2px">스와이프로 단어 빠르게 암기</div>
-        </div>
-        <span style="color:var(--yellow);font-size:13px;font-weight:700">시작 →</span>
+      <button onclick="startFlashcard()" style="width:100%;padding:16px 20px;border:none;background:none;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;transition:transform .12s var(--ease-snap)" ontouchstart="this.style.transform='scale(.98)'" ontouchend="this.style.transform=''">
+        <div style="width:42px;height:42px;background:linear-gradient(135deg,#FFF8E1,#FEF3C7);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🃏</div>
+        <div style="flex:1"><div style="font-size:14px;font-weight:700;color:var(--text)">플래시카드</div><div style="font-size:11px;color:var(--sub);margin-top:2px">스와이프로 단어 빠르게 암기</div></div>
+        <span style="color:var(--g300);font-size:16px">›</span>
       </button>
     </div>
 
-    <!-- Mini Game -->
+    <!-- 쉬는 시간 -->
     <div class="sec-label">쉬는 시간</div>
     <div class="card" style="padding:0;overflow:hidden">
-      <button onclick="startRunnerGame()" style="width:100%;padding:16px 20px;border:none;background:none;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background=''">
-        <div style="width:44px;height:44px;background:var(--green-l);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🏃</div>
-        <div style="flex:1">
-          <div style="font-size:15px;font-weight:700;color:var(--text)">영어해방 런</div>
-          <div style="font-size:12px;color:var(--sub);margin-top:2px">점프하며 코인 모으기 · 최고기록 도전!</div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-size:11px;color:var(--sub)">남은 횟수</div>
-          <div style="font-size:14px;font-weight:800;color:var(--green)">${getGamePlays()}회</div>
-        </div>
+      <button onclick="startRunnerGame()" style="width:100%;padding:16px 20px;border:none;background:none;display:flex;align-items:center;gap:14px;cursor:pointer;text-align:left;transition:transform .12s var(--ease-snap)" ontouchstart="this.style.transform='scale(.98)'" ontouchend="this.style.transform=''">
+        <div style="width:42px;height:42px;background:linear-gradient(135deg,#E8FAF0,#D1FAE5);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🏃</div>
+        <div style="flex:1"><div style="font-size:14px;font-weight:700;color:var(--text)">영어해방 런</div><div style="font-size:11px;color:var(--sub);margin-top:2px">점프하며 코인 모으기</div></div>
+        <span style="font-size:12px;font-weight:700;color:var(--green);background:var(--green-l);padding:4px 10px;border-radius:12px">${gamePlays}회</span>
       </button>
     </div>
 
@@ -2460,9 +2526,9 @@ function rRecord(){setBottom(null);
   const bestScore=totalTests?Math.max(...hist.map(r=>r.score)):0;
 
   app.innerHTML=`<div class="page">
-    <div style="padding:24px 20px 0">
-      <div class="t-heading">기록</div>
-      <div class="t-caption c-sub" style="margin-top:2px">나의 영어 해방 여정을 확인해요</div>
+    <div style="padding:28px 20px 0">
+      <div style="font-size:22px;font-weight:800;color:var(--text);letter-spacing:-.3px">기록</div>
+      <div style="font-size:12px;color:var(--sub);margin-top:3px;font-weight:500">나의 영어 해방 여정</div>
     </div>
 
     ${totalTests?`
@@ -2764,14 +2830,14 @@ function rMy(){setBottom(null);
   const badges=BADGE_DEFS.filter(b=>earned.includes(b.id));
 
   app.innerHTML=`<div class="page">
-    <div style="padding:24px 20px 0">
-      <div class="t-heading">마이</div>
+    <div style="padding:28px 20px 0">
+      <div style="font-size:22px;font-weight:800;color:var(--text);letter-spacing:-.3px">마이</div>
     </div>
 
     <!-- Profile Card -->
     <div class="card" style="margin-top:16px;padding:0;overflow:hidden">
-      <button onclick="openP()" style="width:100%;padding:20px;border:none;background:none;display:flex;align-items:center;gap:16px;cursor:pointer;text-align:left;transition:background .15s" ontouchstart="this.style.background='var(--g50)'" ontouchend="this.style.background=''">
-        <div style="width:52px;height:52px;background:linear-gradient(135deg,var(--blue),var(--blue-d));border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:20px;font-weight:800">${esc(profile.name).charAt(0)}</div>
+      <button onclick="openP()" style="width:100%;padding:20px;border:none;background:none;display:flex;align-items:center;gap:16px;cursor:pointer;text-align:left;transition:transform .12s var(--ease-snap)" ontouchstart="this.style.transform='scale(.98)'" ontouchend="this.style.transform=''">
+        <div style="width:48px;height:48px;background:linear-gradient(135deg,#3182F6,#1B64DA);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:18px;font-weight:800;box-shadow:0 4px 12px rgba(49,130,246,.25)">${esc(profile.name).charAt(0)}</div>
         <div style="flex:1">
           <div class="t-title">${esc(profile.name)}</div>
           <div class="t-caption c-sub" style="margin-top:2px">${esc(profile.school)} · ${esc(profile.grade)}</div>
