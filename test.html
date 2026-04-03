@@ -325,8 +325,17 @@ function getLevel(xp){
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 let currentCur=null, currentWeek=null, currentMeta=null, questions=[], answers=[];
 let currentQ=0, examMode='practice', timerInterval=null, timeLeft=0, startTime=0;
+let studentFromDB=null;
 const params=new URLSearchParams(location.search);
 const SID=params.get('sid')||'';
+
+async function fetchStudentBySID(){
+  if(!SID||!sb)return;
+  try{
+    const{data}=await sb.from('students').select('id,name').eq('id',SID).single();
+    if(data)studentFromDB=data;
+  }catch(e){}
+}
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    Utility
@@ -516,11 +525,22 @@ function renderInfo(){
       </div>
     </div>
 
-    <div style="padding:0 20px 16px;display:flex;flex-direction:column;gap:10px">
-      <input class="info-input" id="inp-name" placeholder="이름" value="${esc(p.name)}">
-      <input class="info-input" id="inp-school" placeholder="학교" value="${esc(p.school)}">
-      <input class="info-input" id="inp-grade" placeholder="학년 (예: 고1)" value="${esc(p.grade)}">
-    </div>
+    ${SID&&studentFromDB
+      ? `<div style="padding:0 20px 16px">
+          <div style="background:var(--blue-l);border-radius:var(--r-md);padding:14px 16px;display:flex;align-items:center;gap:10px">
+            <span style="font-size:20px">👤</span>
+            <div>
+              <div style="font-size:15px;font-weight:800;color:var(--blue)">${esc(studentFromDB.name)}</div>
+              <div style="font-size:12px;color:var(--sub);margin-top:2px">로그인된 학생</div>
+            </div>
+          </div>
+        </div>`
+      : `<div style="padding:0 20px 16px;display:flex;flex-direction:column;gap:10px">
+          <input class="info-input" id="inp-name" placeholder="이름" value="${esc(p.name)}">
+          <input class="info-input" id="inp-school" placeholder="학교" value="${esc(p.school)}">
+          <input class="info-input" id="inp-grade" placeholder="학년 (예: 고1)" value="${esc(p.grade)}">
+        </div>`
+    }
 
     <div style="padding:0 20px 12px;display:flex;gap:10px">
       <button class="btn btn-primary" style="flex:1" onclick="startExam('practice')">
@@ -542,13 +562,18 @@ function renderInfo(){
    Screen 4: Exam
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function startExam(mode){
-  const name=document.getElementById('inp-name').value.trim();
-  if(!name){showToast('이름을 입력하세요');return;}
-  saveProfile({
-    name,
-    school:document.getElementById('inp-school').value.trim(),
-    grade:document.getElementById('inp-grade').value.trim()
-  });
+  let name;
+  if(SID&&studentFromDB){
+    name=studentFromDB.name;
+  }else{
+    name=document.getElementById('inp-name')?.value.trim()||'';
+    if(!name){showToast('이름을 입력하세요');return;}
+    saveProfile({
+      name,
+      school:document.getElementById('inp-school')?.value.trim()||'',
+      grade:document.getElementById('inp-grade')?.value.trim()||''
+    });
+  }
 
   examMode=mode;
   answers=new Array(questions.length).fill(-1);
@@ -1010,7 +1035,7 @@ function initFromParams(){
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    Init
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-initFromParams();
+fetchStudentBySID().then(()=>initFromParams());
 </script>
 </body>
 </html>
