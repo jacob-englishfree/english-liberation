@@ -2683,11 +2683,21 @@ function getWeekRange(){
   return `${mon.getMonth()+1}/${mon.getDate()}(${dayNames[mon.getDay()]}) ~ ${fri.getMonth()+1}/${fri.getDate()}(${dayNames[fri.getDay()]})`;
 }
 function getSurveyHistory(){try{return JSON.parse(localStorage.getItem('el_survey_history'))||[];}catch(e){return[];}}
-function saveSurveyEntry(entry){
+async function saveSurveyEntry(entry){
   const h=getSurveyHistory();h.push(entry);
   try{localStorage.setItem('el_survey_history',JSON.stringify(h.slice(-50)));}catch(e){}
-  // Save to Supabase
+  // Save to Supabase (delete existing this week first, then insert)
   if(supa){
+    const now=new Date();const dow=now.getDay();
+    const isWeekend=dow===0||dow===6;
+    const daysUntilMon=isWeekend?(dow===0?1:2):(1-dow);
+    const mon=new Date(now.getFullYear(),now.getMonth(),now.getDate()+daysUntilMon);
+    mon.setHours(0,0,0,0);
+    const weekStart=mon.toISOString();
+    await supa.from('zoom_surveys').delete()
+      .eq('name',entry.name)
+      .eq('teacher',entry.teacher)
+      .gte('created_at',weekStart);
     supa.from('zoom_surveys').insert({
       name:entry.name,
       school:entry.school,
@@ -2912,7 +2922,7 @@ function surveyStepNext(){
     const svN=$('svName').value.trim();
     const svS=$('svSchool').value.trim();
     const svG=$('svGrade').value;
-    if(svN.length<3){toast('성 포함 본명을 정확히 입력해주세요');$('svName').focus();return;}
+    if(svN.length<2){toast('이름을 정확히 입력해주세요');$('svName').focus();return;}
     if(!svS){toast('학교를 입력해주세요');$('svSchool').focus();return;}
     if(!svG){toast('학년을 선택해주세요');return;}
     if(!sv.curriculum||!sv.teacher){toast('커리큘럼과 담당 선생님을 선택해주세요');return;}
