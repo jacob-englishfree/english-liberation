@@ -729,14 +729,16 @@ function showPracticeFeedback(qIdx,choiceIdx){
   const dots=document.querySelectorAll('.nav-dot');
   dots.forEach((d,i)=>{if(i===qIdx)d.classList.add('answered');});
 
-  // Auto-advance after 2s in practice
-  setTimeout(()=>{
-    if(currentQ<questions.length-1){navQ(1);}
-    else{
-      const unanswered=answers.filter(a=>a<0).length;
-      if(unanswered===0) showToast('모든 문제를 풀었습니다! 제출하세요');
+  // Practice: show "다음 문제" button instead of auto-advance
+  const fb2=document.getElementById('feedback-area');
+  if(currentQ<questions.length-1){
+    fb2.innerHTML+=`<div style="text-align:center;margin-top:12px"><button onclick="navQ(1)" style="padding:12px 32px;border:none;border-radius:var(--r-md);background:var(--blue);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">다음 문제 →</button></div>`;
+  }else{
+    const unanswered=answers.filter(a=>a<0).length;
+    if(unanswered===0){
+      fb2.innerHTML+=`<div style="text-align:center;margin-top:12px"><button onclick="submitExam()" style="padding:12px 32px;border:none;border-radius:var(--r-md);background:var(--green);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">결과 보기</button></div>`;
     }
-  },2000);
+  }
 }
 
 function navQ(dir){
