@@ -2684,30 +2684,38 @@ function getWeekRange(){
 }
 function getSurveyHistory(){try{return JSON.parse(localStorage.getItem('el_survey_history'))||[];}catch(e){return[];}}
 async function saveSurveyEntry(entry){
-  const h=getSurveyHistory();h.push(entry);
+  const cleanName=(entry.name||'').trim().normalize('NFC');
+  const cleanTeacher=(entry.teacher||'').trim().normalize('NFC');
+  const cleanEntry={...entry,name:cleanName,teacher:cleanTeacher};
+  const h=getSurveyHistory();h.push(cleanEntry);
   try{localStorage.setItem('el_survey_history',JSON.stringify(h.slice(-50)));}catch(e){}
-  // Save to Supabase (delete existing this week first, then insert)
-  if(supa){
-    const now=new Date();const dow=now.getDay();
-    const isWeekend=dow===0||dow===6;
-    const daysUntilMon=isWeekend?(dow===0?1:2):(1-dow);
-    const mon=new Date(now.getFullYear(),now.getMonth(),now.getDate()+daysUntilMon);
-    mon.setHours(0,0,0,0);
-    const weekStart=mon.toISOString();
-    await supa.from('zoom_surveys').delete()
-      .eq('name',entry.name)
-      .eq('teacher',entry.teacher)
-      .gte('created_at',weekStart);
-    supa.from('zoom_surveys').insert({
-      name:entry.name,
-      school:entry.school,
-      grade:entry.grade,
-      curriculum:entry.curriculum,
-      teacher:entry.teacher,
-      week:entry.week,
-      day:entry.day
-    }).then(({error})=>{if(error)console.error('Supabase error:',error);});
+  if(!supa)return;
+  const now=new Date();const dow=now.getDay();
+  const isWeekend=dow===0||dow===6;
+  const daysUntilMon=isWeekend?(dow===0?1:2):(1-dow);
+  const mon=new Date(now.getFullYear(),now.getMonth(),now.getDate()+daysUntilMon);
+  mon.setHours(0,0,0,0);
+  const weekStart=mon.toISOString();
+  // INSERT 먼저 → 성공 후 이전 row 삭제. DELETE 실패해도 새 row는 존재.
+  const {data:inserted,error:insErr}=await supa.from('zoom_surveys').insert({
+    name:cleanName,
+    school:cleanEntry.school,
+    grade:cleanEntry.grade,
+    curriculum:cleanEntry.curriculum,
+    teacher:cleanTeacher,
+    week:cleanEntry.week,
+    day:cleanEntry.day
+  }).select().single();
+  if(insErr||!inserted){
+    console.error('Supabase insert error:',insErr);
+    throw new Error(insErr?.message||'설문 저장 실패');
   }
+  const {error:delErr}=await supa.from('zoom_surveys').delete()
+    .eq('name',cleanName)
+    .eq('teacher',cleanTeacher)
+    .gte('created_at',weekStart)
+    .neq('id',inserted.id);
+  if(delErr)console.error('Supabase cleanup error:',delErr);
 }
 function getThisWeekSurvey(){
   const h=getSurveyHistory();if(!h.length)return null;
@@ -2916,7 +2924,7 @@ function saveSurveyInputs(){
   if(s)surveyState.school=s.value.trim();
   if(g)surveyState.grade=g.value;
 }
-function surveyStepNext(){
+async function surveyStepNext(){
   const sv=surveyState;
   if(sv.step===1){
     const svN=$('svName').value.trim();
@@ -2934,19 +2942,27 @@ function surveyStepNext(){
   else if(sv.step===3){
     if(!sv.day){toast('요일을 선택해주세요');return;}
     if(!confirm(`아래 내용으로 제출합니다.\n\n이름: ${sv.name}\n커리큘럼: ${sv.curriculum}\n담당: ${sv.teacher}\n주차: ${sv.week}\n시간: ${sv.day}\n\n제출하시겠습니까?`))return;
-    // Save to localStorage
-    saveSurveyEntry({
-      name:sv.name,
-      school:sv.school,
-      grade:sv.grade,
-      curriculum:sv.curriculum,
-      teacher:sv.teacher,
-      week:sv.week,
-      day:sv.day,
-      timestamp:Date.now()
-    });
-    haptic('submit');
-    sv.step=4;
+    if(sv.submitting)return;
+    sv.submitting=true;R();
+    try{
+      await saveSurveyEntry({
+        name:sv.name,
+        school:sv.school,
+        grade:sv.grade,
+        curriculum:sv.curriculum,
+        teacher:sv.teacher,
+        week:sv.week,
+        day:sv.day,
+        timestamp:Date.now()
+      });
+      haptic('submit');
+      sv.step=4;
+    }catch(err){
+      console.error('설문 제출 실패:',err);
+      alert('제출에 실패했어요. 인터넷 연결을 확인하고 다시 시도해주세요.\n\n('+(err&&err.message?err.message:'네트워크 오류')+')');
+    }finally{
+      sv.submitting=false;
+    }
   }
   R();
 }
