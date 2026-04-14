@@ -2735,10 +2735,11 @@ async function fetchSurveyAvail(teacher){
   targetMon.setHours(0,0,0,0);
   const thisWeekStart=targetMon.getFullYear()+'-'+String(targetMon.getMonth()+1).padStart(2,'0')+'-'+String(targetMon.getDate()).padStart(2,'0');
   surveyAvail={unavailable:[],max:9,counts:{},loading:false,daySlots:null};
+  const cleanTeacher=(teacher||'').trim().normalize('NFC');
   try{
     const[schedRes,countRes]=await Promise.all([
-      supa.from('teacher_schedule').select('*').eq('teacher',teacher).eq('week_start',thisWeekStart).maybeSingle(),
-      supa.from('zoom_surveys').select('day').eq('teacher',teacher).gte('created_at',targetMon.toISOString())
+      supa.from('teacher_schedule').select('*').eq('teacher',cleanTeacher).eq('week_start',thisWeekStart).maybeSingle(),
+      supa.from('zoom_surveys').select('day').eq('teacher',cleanTeacher).gte('created_at',targetMon.toISOString()).range(0,9999)
     ]);
     if(schedRes.data){
       surveyAvail.unavailable=schedRes.data.unavailable_days||[];
@@ -2747,8 +2748,9 @@ async function fetchSurveyAvail(teacher){
     }
     const counts={};
     (countRes.data||[]).forEach(r=>{
-      const m=r.day.match(/^([\uAC00-\uD7AF])/);
-      if(m)counts[m[1]]=(counts[m[1]]||0)+1;
+      const rawDay=(r.day||'').trim().normalize('NFC');
+      const m=rawDay.match(/[월화수목금]/);
+      if(m)counts[m[0]]=(counts[m[0]]||0)+1;
     });
     surveyAvail.counts=counts;
   }catch(e){console.error('fetchSurveyAvail error',e);}
